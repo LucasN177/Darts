@@ -75,3 +75,11 @@
 code {
     color: #c02d76;
 }
+
+.table-width-darts{
+    width: 60px;
+}
+
+.table-width-NrandSum{
+    width: 30px;
+}
