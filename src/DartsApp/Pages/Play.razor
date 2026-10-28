@@ -5,6 +5,7 @@
 @inject NavigationManager Navigation
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject UiState Ui
 
 <PageTitle>@(Engine is null ? "Spiel" : GameModes.Get(Engine.Settings.Mode).Name) · Darts</PageTitle>
 
@@ -27,6 +28,12 @@ else
         <MudMenu Icon="@Icons.Material.Filled.MoreVert" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
             <MudMenuItem Icon="@Icons.Material.Filled.Replay" OnClick="RestartAsync">Neu starten</MudMenuItem>
             <MudMenuItem Icon="@Icons.Material.Filled.Tune" Href="new">Neues Spiel einrichten</MudMenuItem>
+            @if (engine.Players.Any(p => p.IsBot))
+            {
+                <MudMenuItem Icon="@(Ui.FastBots ? Icons.Material.Filled.Speed : Icons.Material.Outlined.Speed)" OnClick="Ui.ToggleFastBotsAsync">
+                    Computer: @(Ui.FastBots ? "schnell" : "normal") werfen
+                </MudMenuItem>
+            }
             <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="AbandonAsync">Spiel abbrechen</MudMenuItem>
         </MudMenu>
     </div>
@@ -79,7 +86,7 @@ else
             <div class="player-grid @(engine.PlayerCount == 1 ? "single" : "")">
                 @for (var i = 0; i < engine.PlayerCount; i++)
                 {
-                    <PlayerCard View="engine.GetView(i)" IsWinner="@(engine.Winner == i)" />
+                    <PlayerCard View="engine.GetView(i)" IsWinner="@(engine.Winner == i)" IsBot="@engine.Players[i].IsBot" />
                 }
             </div>
         </MudItem>
@@ -89,7 +96,15 @@ else
             {
                 <MudPaper Class="pa-3 mb-3" Elevation="2">
                     <div class="d-flex align-center">
-                        <MudText Typo="Typo.subtitle1"><b>@engine.Players[engine.CurrentPlayer].Name</b> ist dran</MudText>
+                        @if (engine.IsBotTurn)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Secondary" Class="mr-2" />
+                            <MudText Typo="Typo.subtitle1"><b>@engine.Players[engine.CurrentPlayer].Name</b> wirft …</MudText>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.subtitle1"><b>@engine.Players[engine.CurrentPlayer].Name</b> ist dran</MudText>
+                        }
                         <MudSpacer />
                         <MudText Typo="Typo.h6">@(engine.CurrentTurn?.Score ?? 0)</MudText>
                     </div>
@@ -111,10 +126,10 @@ else
                 </MudPaper>
             }
 
-            <DartPad OnDart="ThrowAsync" OnUndo="Session.UndoAsync" CanUndo="engine.CanUndo" Disabled="engine.IsFinished"
+            <DartPad OnDart="ThrowAsync" OnUndo="Session.UndoAsync" CanUndo="@(engine.CanUndo && engine.Players.Any(p => !p.IsBot))" Disabled="@(engine.IsFinished || engine.IsBotTurn)"
                      Highlight="@(engine.IsFinished ? null : engine.RelevantSegments)" />
 
-            @if (!engine.IsFinished)
+            @if (!engine.IsFinished && !engine.IsBotTurn)
             {
                 <MudButton FullWidth="true" Variant="Variant.Outlined" Class="mt-2" StartIcon="@Icons.Material.Filled.SkipNext"
                            OnClick="Session.FinishTurnAsync">Aufnahme beenden (Rest = Miss)</MudButton>
@@ -136,7 +151,13 @@ else
 @code {
     private GameEngine? Engine => Session.Engine;
 
-    protected override void OnInitialized() => Session.Changed += OnChanged;
+    protected override void OnInitialized()
+    {
+        Session.Changed += OnChanged;
+        Ui.Changed += OnChanged;
+        // Nach dem Neuladen der Seite weiterspielen, falls ein Computergegner dran ist.
+        Session.EnsureBotsPlaying();
+    }
 
     private void OnChanged() => InvokeAsync(StateHasChanged);
 
@@ -173,5 +194,9 @@ else
     private Task<bool?> Confirm(string title, string text, string yes) =>
         DialogService.ShowMessageBoxAsync(title, text, yesText: yes, cancelText: "Zurück");
 
-    public void Dispose() => Session.Changed -= OnChanged;
+    public void Dispose()
+    {
+        Session.Changed -= OnChanged;
+        Ui.Changed -= OnChanged;
+    }
 }

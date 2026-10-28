@@ -157,6 +157,13 @@ public sealed class X01Engine : GameEngine
         }
     }
 
+    public override Dart BotAim()
+    {
+        var p = _state[CurrentPlayer];
+        if (!p.Started) return Settings.InRule == InOutRule.Master ? Dart.T(20) : Dart.D(20);
+        return CheckoutCalculator.BestDart(p.Remaining, DartsLeftInTurn, Settings.OutRule);
+    }
+
     public override PlayerView GetView(int player)
     {
         var p = _state[player];
@@ -172,7 +179,7 @@ public sealed class X01Engine : GameEngine
 
         string? badge = null;
         if (p.Started && player != CurrentPlayer && CheckoutCalculator.SuggestText(p.Remaining, 3, Settings.OutRule) is { } co)
-            badge = co;
+            badge = $"Finish: {co}";
 
         return new PlayerView(Players[player].Name, p.Remaining.ToString(), "Rest", details,
             IsActive: !IsFinished && player == CurrentPlayer, Badge: badge);

@@ -39,6 +39,27 @@
                     <th class="text-right">Treffer</th>
                     <th class="text-right">Quote</th>
                     break;
+                case GameMode.Killer:
+                    <th class="text-right">Leben</th>
+                    <th class="text-right">Kills</th>
+                    <th class="text-right">Zahl</th>
+                    <th class="text-right">Darts</th>
+                    break;
+                case GameMode.Baseball:
+                    <th class="text-right">Runs</th>
+                    <th class="text-right">Trefferquote</th>
+                    <th class="text-right">Darts</th>
+                    break;
+                case GameMode.HalveIt:
+                    <th class="text-right">Punkte</th>
+                    <th class="text-right">Halbiert</th>
+                    <th class="text-right">Darts</th>
+                    break;
+                case GameMode.Gotcha:
+                    <th class="text-right">Punkte</th>
+                    <th class="text-right">Gotchas</th>
+                    <th class="text-right">Darts</th>
+                    break;
                 default:
                     <th class="text-right">Punkte</th>
                     <th class="text-right">Ø</th>
@@ -61,7 +82,7 @@
                         @r.Rank
                     }
                 </td>
-                <td>@r.Name</td>
+                <td>@r.Name@(r.Extra.ContainsKey("bot") ? " 🤖" : "")</td>
                 @switch (Mode)
                 {
                     case GameMode.X01:
@@ -95,6 +116,27 @@
                         <td class="text-right"><b>@r.Score</b></td>
                         <td class="text-right">@r.CheckoutsHit</td>
                         <td class="text-right">@Extra(r, "hit_rate", "P0")</td>
+                        break;
+                    case GameMode.Killer:
+                        <td class="text-right"><b>@r.Score</b></td>
+                        <td class="text-right">@Extra(r, "kills", "0")</td>
+                        <td class="text-right">@Extra(r, "number", "0")</td>
+                        <td class="text-right">@r.DartsThrown</td>
+                        break;
+                    case GameMode.Baseball:
+                        <td class="text-right"><b>@r.Score</b></td>
+                        <td class="text-right">@Extra(r, "hit_rate", "P0")</td>
+                        <td class="text-right">@r.DartsThrown</td>
+                        break;
+                    case GameMode.HalveIt:
+                        <td class="text-right"><b>@r.Score</b></td>
+                        <td class="text-right">@Extra(r, "halved", "0")</td>
+                        <td class="text-right">@r.DartsThrown</td>
+                        break;
+                    case GameMode.Gotcha:
+                        <td class="text-right"><b>@r.Score</b></td>
+                        <td class="text-right">@Extra(r, "knockouts", "0")</td>
+                        <td class="text-right">@r.DartsThrown</td>
                         break;
                     default:
                         <td class="text-right"><b>@r.Score</b></td>

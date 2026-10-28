@@ -50,6 +50,36 @@ public static class CheckoutCalculator
         return path is null ? null : string.Join(" ", path);
     }
 
+    private static readonly Dart[] SetupOrder = BuildSetupOrder();
+
+    private static Dart[] BuildSetupOrder()
+    {
+        var list = new List<Dart> { Dart.T(20), Dart.T(19), Dart.T(18), Dart.T(17) };
+        for (var s = 20; s >= 1; s--) list.Add(Dart.S(s));
+        return list.ToArray();
+    }
+
+    /// <summary>
+    /// Bester nächster Dart für den Computer: erster Dart eines Checkout-Wegs, sonst ein Vorbereitungswurf,
+    /// der keinen Bust riskiert und möglichst einen auscheckbaren Rest übrig lässt.
+    /// </summary>
+    public static Dart BestDart(int remaining, int dartsLeft, InOutRule outRule)
+    {
+        if (Suggest(remaining, dartsLeft, outRule) is { Count: > 0 } path) return path[0];
+
+        var minimumLeft = outRule == InOutRule.Single ? 1 : 2;
+        Dart? fallback = null;
+        foreach (var dart in SetupOrder)
+        {
+            var left = remaining - dart.Score;
+            if (left < minimumLeft) continue;
+            if (left > 170 || Suggest(left, 3, outRule) is not null) return dart;
+            fallback ??= dart;
+        }
+
+        return fallback ?? Dart.S(1);
+    }
+
     private static IReadOnlyList<Dart>? Compute(int remaining, int dartsLeft, InOutRule outRule)
     {
         Dart[]? best = null;

@@ -56,6 +56,18 @@ public sealed class AroundTheClockEngine : GameEngine
         return false;
     }
 
+    public override Dart BotAim()
+    {
+        if (TargetOf(CurrentPlayer) is not { } target) return Dart.Miss;
+        if (target == Dart.BullSegment) return Dart.Bullseye;
+        return Settings.ClockHit switch
+        {
+            AroundTheClockHit.DoubleOnly => Dart.D(target),
+            AroundTheClockHit.TripleOnly => Dart.T(target),
+            _ => Dart.S(target)
+        };
+    }
+
     public override string Status => $"Runde {Round}";
 
     public override string? Hint => IsFinished || TargetOf(CurrentPlayer) is not { } t

@@ -1,7 +1,14 @@
 namespace DartsApp.Core.Models;
 
-/// <summary>Ein Spieler in einem Spiel. Id ist null für spontane Gastspieler.</summary>
-public sealed record PlayerRef(Guid? Id, string Name);
+/// <summary>
+/// Ein Spieler in einem Spiel. Id ist null für spontane Gastspieler und Computergegner;
+/// Bot ist gesetzt, wenn der Computer für diesen Spieler wirft.
+/// </summary>
+public sealed record PlayerRef(Guid? Id, string Name, BotLevel? Bot = null)
+{
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsBot => Bot is not null;
+}
 
 /// <summary>Eine Aufnahme (bis zu drei Darts) eines Spielers.</summary>
 public sealed class Turn

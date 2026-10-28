@@ -133,6 +133,29 @@ public sealed class CricketEngine : GameEngine
         }
     }
 
+    public override Dart BotAim()
+    {
+        var me = CurrentPlayer;
+        var opponents = Enumerable.Range(0, PlayerCount).Where(o => o != me).ToList();
+
+        // Felder, die ich geschlossen habe und mindestens ein Gegner noch offen hat.
+        var scoring = Targets.Where(t => MarksOf(me, t) >= 3 && opponents.Any(o => MarksOf(o, t) < 3)).ToList();
+        var open = Targets.Where(t => MarksOf(me, t) < 3 && !IsClosedByAll(t)).ToList();
+
+        var behind = opponents.Count > 0 && (CutThroat
+            ? opponents.Any(o => _points[o] <= _points[me])
+            : opponents.Any(o => _points[o] >= _points[me]));
+
+        // Zurückliegend wird gepunktet, sonst das höchste offene Feld geschlossen.
+        int target;
+        if (behind && scoring.Count > 0) target = scoring[0];
+        else if (open.Count > 0) target = open[0];
+        else if (scoring.Count > 0) target = scoring[0];
+        else target = 20;
+
+        return target == Dart.BullSegment ? Dart.Bullseye : Dart.T(target);
+    }
+
     private static string Name(int target) => target == Dart.BullSegment ? "Bull" : target.ToString();
 
     private double Mpr(int player)

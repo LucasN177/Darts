@@ -6,6 +6,10 @@
                 <MudIcon Icon="@Icons.Material.Filled.PlayArrow" Size="Size.Small" Color="Color.Primary" Class="mr-1" Style="vertical-align:middle" />
             }
             @View.Name
+            @if (IsBot)
+            {
+                <MudIcon Icon="@Icons.Material.Filled.SmartToy" Size="Size.Small" Color="Color.Secondary" Class="ml-1" Style="vertical-align:middle" />
+            }
         </MudText>
         @if (IsWinner)
         {
@@ -26,11 +30,12 @@
     </div>
     @if (!string.IsNullOrEmpty(View.Badge))
     {
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1 d-block">Finish: @View.Badge</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1 d-block">@View.Badge</MudText>
     }
 </MudPaper>
 
 @code {
     [Parameter, EditorRequired] public PlayerView View { get; set; } = default!;
     [Parameter] public bool IsWinner { get; set; }
+    [Parameter] public bool IsBot { get; set; }
 }

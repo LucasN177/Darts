@@ -81,11 +81,25 @@ else
                 <StatTile Label="Bestes Ergebnis" Value="@_stats.BestScore.ToString()" />
                 <StatTile Label="Trefferquote" Value="@Pct(_stats.HitRate)" />
                 break;
-            default:
+            case GameMode.HighScore:
                 <StatTile Label="Ø Punkte" Value="@_stats.AverageScore.ToString("0")" Highlight="true" />
                 <StatTile Label="Bestes Ergebnis" Value="@_stats.BestScore.ToString()" />
                 <StatTile Label="3-Dart-Average" Value="@_stats.Average.ToString("0.00")" />
                 <StatTile Label="180er" Value="@_stats.Count180.ToString()" />
+                break;
+            case GameMode.Killer:
+                <StatTile Label="Siegquote" Value="@_stats.WinRate.ToString("P0")" Highlight="true" />
+                <StatTile Label="Darts gesamt" Value="@_stats.DartsThrown.ToString()" />
+                break;
+            case GameMode.Baseball:
+                <StatTile Label="Ø Runs" Value="@_stats.AverageScore.ToString("0.0")" Highlight="true" />
+                <StatTile Label="Meiste Runs" Value="@_stats.BestScore.ToString()" />
+                <StatTile Label="Trefferquote" Value="@Pct(_stats.HitRate)" />
+                break;
+            default:
+                <StatTile Label="Ø Punkte" Value="@_stats.AverageScore.ToString("0")" Highlight="true" />
+                <StatTile Label="Bestes Ergebnis" Value="@_stats.BestScore.ToString()" />
+                <StatTile Label="Darts gesamt" Value="@_stats.DartsThrown.ToString()" />
                 break;
         }
     </div>
@@ -165,9 +179,10 @@ else
             _games = await Data.GetGamesAsync();
             var saved = await Data.GetPlayersAsync();
 
-            // Gespeicherte Spieler zuerst, danach Gäste aus vergangenen Spielen.
+            // Gespeicherte Spieler zuerst, danach Gäste aus vergangenen Spielen (ohne Computergegner).
             _players = saved.Select(p => new PlayerOption(p.Id.ToString(), p.Id, p.Name)).ToList();
             var guests = _games.SelectMany(g => g.Results)
+                .Where(r => !r.Extra.ContainsKey("bot"))
                 .Where(r => r.PlayerId is null || saved.All(p => p.Id != r.PlayerId))
                 .Select(r => r.Name.Trim())
                 .Where(n => _players.All(p => !string.Equals(p.Name, n, StringComparison.OrdinalIgnoreCase)))

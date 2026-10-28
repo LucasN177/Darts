@@ -83,7 +83,9 @@ public sealed class Bobs27Engine : GameEngine
         return ranking[0];
     }
 
-    public override string Status => $"Runde {Math.Min(Round, Targets.Length)} / {Targets.Length}";
+    public override Dart BotAim() => Target == Dart.BullSegment ? Dart.Bullseye : Dart.D(Target);
+
+    public override string Status =>$"Runde {Math.Min(Round, Targets.Length)} / {Targets.Length}";
 
     public override string? Hint => IsFinished ? null : $"Ziel: {(Target == Dart.BullSegment ? "Bullseye" : $"D{Target}")}";
 

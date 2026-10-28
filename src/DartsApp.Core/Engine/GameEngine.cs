@@ -62,6 +62,11 @@ public abstract class GameEngine
     /// <summary>Felder, die für den aktiven Spieler gerade relevant sind (zum Hervorheben im Eingabefeld).</summary>
     public virtual IReadOnlySet<int>? RelevantSegments => null;
 
+    /// <summary>Feld, auf das ein Computergegner als Nächstes zielt.</summary>
+    public virtual Dart BotAim() => Dart.T(20);
+
+    public bool IsBotTurn => !IsFinished && Players[CurrentPlayer].IsBot;
+
     /// <summary>Statuszeile über dem Scoreboard, z.B. "Set 1 · Leg 2 · Runde 4".</summary>
     public virtual string Status => $"Runde {Round}";
 
@@ -259,7 +264,8 @@ public abstract class GameEngine
             PlayerId = Players[player].Id,
             Name = Players[player].Name,
             DartsThrown = darts,
-            HighestTurn = turns.Count == 0 ? 0 : turns.Max(t => t.Score)
+            HighestTurn = turns.Count == 0 ? 0 : turns.Max(t => t.Score),
+            Extra = Players[player].Bot is { } bot ? new() { ["bot"] = (int)bot } : new()
         };
     }
 

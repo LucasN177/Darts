@@ -127,6 +127,23 @@
                 case GameMode.HighScore:
                     <MudNumericField T="int" Label="Runden" Min="1" Max="50" Value="@_settings.Rounds" ValueChanged="@(v => Update(s => s with { Rounds = Math.Clamp(v, 1, 50) }))" />
                     break;
+
+                case GameMode.Killer:
+                    <MudNumericField T="int" Label="Leben" Min="1" Max="9" Value="@_settings.KillerLives" ValueChanged="@(v => Update(s => s with { KillerLives = Math.Clamp(v, 1, 9) }))"
+                                     HelperText="Die Zahlen werden beim Start zufällig verteilt." />
+                    break;
+
+                case GameMode.HalveIt:
+                    <MudText Typo="Typo.body2">Ziele: 15 · 16 · Doppel · 17 · 18 · Triple · 19 · 20 · Bull. Start mit @HalveItEngine.StartPoints Punkten.</MudText>
+                    break;
+
+                case GameMode.Baseball:
+                    <MudNumericField T="int" Label="Innings" Min="1" Max="20" Value="@_settings.Rounds" ValueChanged="@(v => Update(s => s with { Rounds = Math.Clamp(v, 1, 20) }))" HelperText="Klassisch 9" />
+                    break;
+
+                case GameMode.Gotcha:
+                    <MudNumericField T="int" Label="Zielpunktzahl" Min="50" Max="1001" Value="@_settings.GotchaTarget" ValueChanged="@(v => Update(s => s with { GotchaTarget = Math.Clamp(v, 50, 1001) }))" />
+                    break;
             }
 
             <MudText Typo="Typo.caption" Class="mud-text-secondary mt-3 d-block">@_settings.Describe()</MudText>
@@ -157,7 +174,16 @@
                         <MudListItem T="PlayerRef">
                             <div class="d-flex align-center">
                                 <MudAvatar Size="Size.Small" Color="@(index == 0 ? Color.Primary : Color.Default)" Class="mr-3">@(index + 1)</MudAvatar>
-                                <MudText>@player.Name @(player.Id is null ? "(Gast)" : "")</MudText>
+                                @if (player.Bot is { } bot)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.SmartToy" Size="Size.Small" Color="Color.Secondary" Class="mr-1" />
+                                    <MudText>@player.Name</MudText>
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Class="ml-1">~@bot.ApproxAverage() Ø</MudChip>
+                                }
+                                else
+                                {
+                                    <MudText>@player.Name @(player.Id is null ? "(Gast)" : "")</MudText>
+                                }
                                 <MudSpacer />
                                 <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowUp" Size="Size.Small" Disabled="@(index == 0)" OnClick="() => Move(index, -1)" />
                                 <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowDown" Size="Size.Small" Disabled="@(index == _selected.Count - 1)" OnClick="() => Move(index, 1)" />
@@ -189,12 +215,29 @@
                 <MudButton Variant="Variant.Outlined" OnClick="AddGuestAsync" Disabled="@string.IsNullOrWhiteSpace(_guestName)">Hinzufügen</MudButton>
             </div>
             <MudCheckBox T="bool" @bind-Value="_saveGuest" Label="In Spielerliste speichern" Dense="true" Size="Size.Small" />
+
+            <MudDivider Class="my-3" />
+            <MudText Typo="Typo.subtitle2">Computergegner</MudText>
+            <div class="d-flex align-center gap-2">
+                <MudSelect T="BotLevel" @bind-Value="_botLevel" Label="Schwierigkeit" Margin="Margin.Dense">
+                    @foreach (var level in BotLevels.All)
+                    {
+                        <MudSelectItem T="BotLevel" Value="@level">@level.Name() (Ø ~@level.ApproxAverage())</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.SmartToy" OnClick="AddBot">Hinzufügen</MudButton>
+            </div>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">Ø = ungefährer 3-Dart-Average in X01. Der Computer spielt in jedem Modus mit passender Taktik.</MudText>
         </MudPaper>
     </MudItem>
 
     <MudItem xs="12" Class="d-flex justify-end gap-2">
+        @if (_selected.Count < ModeInfo.MinPlayers)
+        {
+            <MudText Typo="Typo.body2" Class="mud-text-secondary align-self-center">@ModeInfo.Name braucht mindestens @ModeInfo.MinPlayers Spieler – füge Mitspieler oder Computergegner hinzu.</MudText>
+        }
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" StartIcon="@Icons.Material.Filled.PlayArrow"
-                   Disabled="@(_selected.Count == 0)" OnClick="StartAsync">Spiel starten</MudButton>
+                   Disabled="@(_selected.Count < ModeInfo.MinPlayers)" OnClick="StartAsync">Spiel starten</MudButton>
     </MudItem>
 </MudGrid>
 
@@ -216,6 +259,7 @@
     private IReadOnlyList<Player> _available = [];
     private string _guestName = "";
     private bool _saveGuest = true;
+    private BotLevel _botLevel = BotLevel.Intermediate;
 
     private GameModeInfo ModeInfo => GameModes.Get(_settings.Mode);
 
@@ -292,6 +336,20 @@
         _guestName = "";
     }
 
+    private void AddBot()
+    {
+        if (_selected.Count >= GameEngine.MaxPlayers)
+        {
+            Snackbar.Add($"Maximal {GameEngine.MaxPlayers} Spieler", Severity.Warning);
+            return;
+        }
+
+        var baseName = $"Computer ({_botLevel.Name()})";
+        var name = baseName;
+        for (var i = 2; _selected.Any(p => p.Name == name); i++) name = $"{baseName} {i}";
+        _selected.Add(new PlayerRef(null, name, _botLevel));
+    }
+
     private void Move(int index, int delta)
     {
         var target = index + delta;
@@ -303,7 +361,7 @@
 
     private async Task StartAsync()
     {
-        if (_selected.Count == 0) return;
+        if (_selected.Count < ModeInfo.MinPlayers) return;
 
         if (Session.HasActiveGame)
         {

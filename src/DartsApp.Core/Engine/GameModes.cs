@@ -43,7 +43,28 @@ public static class GameModes
         new(GameMode.HighScore, "High Score", "Punkte sammeln",
             "So viele Punkte wie möglich in einer festen Anzahl Runden.",
             "Jede Aufnahme zählt voll. Nach der eingestellten Rundenzahl gewinnt die höchste Punktzahl. Gut zum Training " +
-            "des Scorings auf T20/T19.")
+            "des Scorings auf T20/T19."),
+        new(GameMode.Killer, "Killer", "Partyspiel ab 2",
+            "Jeder hat eine eigene Zahl – als Killer jagst du die Doppel der anderen.",
+            "Zu Beginn bekommt jeder Spieler zufällig eine eigene Zahl. Wer das Doppel seiner Zahl trifft, wird zum Killer. " +
+            "Ab dann kostet jeder Treffer auf das Doppel eines Gegners diesen ein Leben. Vorsicht: Trifft ein Killer sein " +
+            "eigenes Doppel, verliert er selbst ein Leben. Wer keine Leben mehr hat, scheidet aus – der Letzte gewinnt.",
+            MinPlayers: 2),
+        new(GameMode.HalveIt, "Halve-It", "Treffen oder halbieren",
+            "Neun Runden mit festen Zielen – wer nichts trifft, verliert die Hälfte.",
+            "Alle starten mit 40 Punkten. Die Ziele der Runden sind 15, 16, ein beliebiges Doppel, 17, 18, ein beliebiges " +
+            "Triple, 19, 20 und Bull. Jeder Treffer auf das Ziel zählt seinen Wert. Wer in einer Runde das Ziel gar nicht " +
+            "trifft, dessen Punkte werden halbiert. Nach neun Runden gewinnt die höchste Punktzahl."),
+        new(GameMode.Baseball, "Baseball", "9 Innings",
+            "Runs sammeln: im n-ten Inning zählt nur die Zahl n.",
+            "Gespielt werden (standardmäßig) neun Innings. Im ersten Inning zählt nur die 1, im zweiten die 2 usw. " +
+            "Ein Single bringt einen Run, ein Double zwei und ein Triple drei. Nach dem letzten Inning gewinnt, wer die " +
+            "meisten Runs hat."),
+        new(GameMode.Gotcha, "Gotcha", "Hochzählen & ärgern",
+            "Von 0 auf genau 301 – und Gegner auf 0 zurückschicken.",
+            "Alle zählen von 0 nach oben. Wer das Ziel (Standard 301) genau erreicht, gewinnt; wer darüber kommt, überwirft " +
+            "sich und die Aufnahme zählt nicht. Erreicht ein Spieler mit einem Dart genau den Punktestand eines Gegners, " +
+            "fällt dieser auf 0 zurück.")
     ];
 
     public static GameModeInfo Get(GameMode mode) => All.First(m => m.Mode == mode);
@@ -57,6 +78,10 @@ public static class GameModes
         GameMode.Bobs27 => new Bobs27Engine(settings, players),
         GameMode.Checkout121 => new Checkout121Engine(settings, players),
         GameMode.HighScore => new HighScoreEngine(settings, players),
+        GameMode.Killer => new KillerEngine(settings, players),
+        GameMode.HalveIt => new HalveItEngine(settings, players),
+        GameMode.Baseball => new BaseballEngine(settings, players),
+        GameMode.Gotcha => new GotchaEngine(settings, players),
         _ => throw new ArgumentOutOfRangeException(nameof(settings))
     };
 

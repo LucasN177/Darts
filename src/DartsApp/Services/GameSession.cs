@@ -1,3 +1,4 @@
+using DartsApp.Core.Bots;
 using DartsApp.Core.Engine;
 using DartsApp.Core.Models;
 
@@ -7,7 +8,7 @@ namespace DartsApp.Services;
 /// Das aktuell laufende Spiel. Wird nach jedem Wurf im localStorage gesichert, damit ein
 /// Neuladen der Seite oder ein leerer Akku das Spiel nicht beendet.
 /// </summary>
-public sealed class GameSession(LocalStore store, DataService data)
+public sealed class GameSession(LocalStore store, DataService data, UiState ui)
 {
     private const string ActiveGameKey = "darts.activeGame";
 
@@ -53,6 +54,9 @@ public sealed class GameSession(LocalStore store, DataService data)
 
     public async Task StartAsync(GameSettings settings, IReadOnlyList<PlayerRef> players)
     {
+        StopBots();
+        // Neuer Seed je Spiel (z.B. Zahlenvergabe bei Killer); er wird mit den Einstellungen gespeichert.
+        settings = settings with { Seed = Random.Shared.Next(1, int.MaxValue) };
         Engine = GameModes.Create(settings, players.ToList());
         GameId = Guid.NewGuid();
         StartedAt = DateTimeOffset.UtcNow;
@@ -60,6 +64,7 @@ public sealed class GameSession(LocalStore store, DataService data)
         SaveError = null;
         await PersistAsync();
         Changed?.Invoke();
+        EnsureBotsPlaying();
     }
 
     /// <summary>Gleiche Einstellungen, Spielerreihenfolge rotiert (der Zweite beginnt).</summary>
@@ -70,11 +75,36 @@ public sealed class GameSession(LocalStore store, DataService data)
         return StartAsync(Engine.Settings, players);
     }
 
-    public Task ThrowAsync(Dart dart) => MutateAsync(e => e.Throw(dart));
-    public Task UndoAsync() => MutateAsync(e => e.Undo());
-    public Task FinishTurnAsync() => MutateAsync(e => e.FinishTurn());
+    /// <summary>Wurf eines Menschen. Während ein Computergegner dran ist, wird die Eingabe ignoriert.</summary>
+    public Task ThrowAsync(Dart dart) => IsBotTurn ? Task.CompletedTask : MutateAsync(e => e.Throw(dart));
+
+    public Task FinishTurnAsync() => IsBotTurn ? Task.CompletedTask : MutateAsync(e => e.FinishTurn());
+
+    /// <summary>
+    /// Nimmt den letzten Dart eines Menschen zurück. Würfe von Computergegnern danach werden ebenfalls
+    /// entfernt, sonst würde der Computer sofort wieder werfen.
+    /// </summary>
+    public async Task UndoAsync()
+    {
+        StopBots();
+        await MutateAsync(e =>
+        {
+            while (e.Turns.Count > 0)
+            {
+                var thrower = e.Turns[^1].PlayerIndex;
+                e.Undo();
+                if (!e.Players[thrower].IsBot) break;
+            }
+        });
+    }
 
     private async Task MutateAsync(Action<GameEngine> action)
+    {
+        await MutateCoreAsync(action);
+        EnsureBotsPlaying();
+    }
+
+    private async Task MutateCoreAsync(Action<GameEngine> action)
     {
         if (Engine is null) return;
         var wasFinished = Engine.IsFinished;
@@ -88,6 +118,53 @@ public sealed class GameSession(LocalStore store, DataService data)
 
         if (Engine.IsFinished && !IsSaved)
             await SaveResultAsync();
+    }
+
+    // ---------- Computergegner ----------
+
+    private CancellationTokenSource? _botCts;
+
+    public bool IsBotTurn => Engine?.IsBotTurn == true;
+
+    /// <summary>Startet die Würfe der Computergegner, falls einer dran ist und sie nicht schon laufen.</summary>
+    public void EnsureBotsPlaying()
+    {
+        if (!IsBotTurn || _botCts is not null) return;
+        var cts = new CancellationTokenSource();
+        _botCts = cts;
+        _ = RunBotsAsync(cts);
+    }
+
+    private void StopBots()
+    {
+        _botCts?.Cancel();
+        _botCts = null;
+    }
+
+    private async Task RunBotsAsync(CancellationTokenSource cts)
+    {
+        try
+        {
+            while (!cts.IsCancellationRequested && Engine is { IsBotTurn: true } engine)
+            {
+                // Zwischen zwei Aufnahmen etwas länger warten, damit man den Spielstand sieht.
+                var delay = engine.DartsInCurrentTurn == 0 ? ui.BotTurnDelay : ui.BotDartDelay;
+                await Task.Delay(delay, cts.Token);
+                if (cts.IsCancellationRequested || Engine != engine || !engine.IsBotTurn) break;
+
+                var level = engine.Players[engine.CurrentPlayer].Bot!.Value;
+                var dart = Bot.NextDart(engine, level, Random.Shared);
+                await MutateCoreAsync(e => e.Throw(dart));
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Spiel abgebrochen oder Undo – nichts zu tun.
+        }
+        finally
+        {
+            if (_botCts == cts) _botCts = null;
+        }
     }
 
     public async Task SaveResultAsync()
@@ -117,6 +194,7 @@ public sealed class GameSession(LocalStore store, DataService data)
     /// <summary>Bricht das laufende Spiel ab, ohne es zu speichern.</summary>
     public async Task AbandonAsync()
     {
+        StopBots();
         Engine = null;
         IsSaved = false;
         SaveError = null;

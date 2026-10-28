@@ -123,6 +123,9 @@ public sealed class Checkout121Engine : GameEngine
         return a.Successes == b.Successes && a.HighestTarget == b.HighestTarget ? null : ranking[0];
     }
 
+    public override Dart BotAim() =>
+        CheckoutCalculator.BestDart(_state[CurrentPlayer].Remaining, DartsLeftInTurn, Settings.OutRule);
+
     public override string Status
     {
         get

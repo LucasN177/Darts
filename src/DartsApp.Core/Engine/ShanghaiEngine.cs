@@ -57,6 +57,14 @@ public sealed class ShanghaiEngine : GameEngine
         FinishGame(leaders.Count == 1 ? leaders[0] : null);
     }
 
+    public override Dart BotAim()
+    {
+        // Für einen möglichen Shanghai fehlende Felder bevorzugen, Triple zuerst.
+        var hit = CurrentTurn?.Darts.Where(d => d.Segment == Target).Select(d => d.Multiplier).ToHashSet() ?? [];
+        var multiplier = new[] { 3, 2, 1 }.FirstOrDefault(m => !hit.Contains(m), 3);
+        return new Dart(Target, multiplier);
+    }
+
     public override string Status => $"Runde {Target} / {Settings.Rounds}";
     public override string? Hint => IsFinished ? null : $"Ziel: {Target} (S, D und T = Shanghai)";
 

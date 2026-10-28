@@ -8,7 +8,11 @@ public enum GameMode
     Shanghai,
     Bobs27,
     Checkout121,
-    HighScore
+    HighScore,
+    Killer,
+    HalveIt,
+    Baseball,
+    Gotcha
 }
 
 /// <summary>Regel für den Einstieg (X01) bzw. Ausstieg.</summary>
@@ -80,6 +84,18 @@ public sealed record GameSettings
     public int CheckoutAttempts { get; init; } = 10;
     public CheckoutFailRule CheckoutOnFail { get; init; } = CheckoutFailRule.Stay;
 
+    // Killer
+    public int KillerLives { get; init; } = 3;
+
+    // Gotcha
+    public int GotchaTarget { get; init; } = 301;
+
+    /// <summary>
+    /// Zufallswert, der beim Spielstart gesetzt wird (z.B. für die Zahlenvergabe bei Killer).
+    /// Er ist Teil der Einstellungen, damit das Nachspielen eines Spiels dasselbe Ergebnis liefert.
+    /// </summary>
+    public int Seed { get; init; }
+
     public static GameSettings DefaultFor(GameMode mode) => mode switch
     {
         GameMode.X01 => new GameSettings { Mode = mode },
@@ -89,6 +105,10 @@ public sealed record GameSettings
         GameMode.Bobs27 => new GameSettings { Mode = mode },
         GameMode.Checkout121 => new GameSettings { Mode = mode, OutRule = InOutRule.Double },
         GameMode.HighScore => new GameSettings { Mode = mode, Rounds = 10 },
+        GameMode.Killer => new GameSettings { Mode = mode },
+        GameMode.HalveIt => new GameSettings { Mode = mode },
+        GameMode.Baseball => new GameSettings { Mode = mode, Rounds = 9 },
+        GameMode.Gotcha => new GameSettings { Mode = mode },
         _ => throw new ArgumentOutOfRangeException(nameof(mode))
     };
 
@@ -113,6 +133,10 @@ public sealed record GameSettings
         GameMode.Bobs27 => Bobs27Elimination ? "Mit Ausscheiden" : "Ohne Ausscheiden",
         GameMode.Checkout121 => $"Start {CheckoutStart} · {CheckoutTurnsPerAttempt * 3} Darts · {CheckoutAttempts} Versuche · {OutRule} Out",
         GameMode.HighScore => $"{Rounds} Runden",
+        GameMode.Killer => $"{KillerLives} Leben",
+        GameMode.HalveIt => "15 · 16 · D · 17 · 18 · T · 19 · 20 · Bull",
+        GameMode.Baseball => $"{Rounds} Innings",
+        GameMode.Gotcha => $"Ziel {GotchaTarget}",
         _ => ""
     };
 }
