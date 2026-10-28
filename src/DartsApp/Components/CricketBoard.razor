@@ -1,0 +1,45 @@
+@* Übersicht der Cricket-Marks aller Spieler. *@
+
+<MudSimpleTable Dense="true" Bordered="true" Class="cricket-board">
+    <thead>
+        <tr>
+            <th class="target-col"></th>
+            @for (var p = 0; p < Engine.PlayerCount; p++)
+            {
+                <th class="@(p == Engine.CurrentPlayer && !Engine.IsFinished ? "active" : "")">@Engine.Players[p].Name</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var target in CricketEngine.Targets)
+        {
+            var closed = Engine.IsClosedByAll(target);
+            <tr class="@(closed ? "closed" : "")">
+                <td class="target-col"><b>@(target == Dart.BullSegment ? "Bull" : target)</b></td>
+                @for (var p = 0; p < Engine.PlayerCount; p++)
+                {
+                    <td class="marks @(p == Engine.CurrentPlayer && !Engine.IsFinished ? "active" : "")">@Marks(Engine.MarksOf(p, target))</td>
+                }
+            </tr>
+        }
+        <tr class="points-row">
+            <td class="target-col">Punkte</td>
+            @for (var p = 0; p < Engine.PlayerCount; p++)
+            {
+                <td><b>@Engine.PointsOf(p)</b></td>
+            }
+        </tr>
+    </tbody>
+</MudSimpleTable>
+
+@code {
+    [Parameter, EditorRequired] public CricketEngine Engine { get; set; } = default!;
+
+    private static string Marks(int marks) => marks switch
+    {
+        0 => "",
+        1 => "/",
+        2 => "X",
+        _ => "Ⓧ"
+    };
+}

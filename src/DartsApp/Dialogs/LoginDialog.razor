@@ -1,0 +1,140 @@
+@inject AuthService Auth
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudTabs @bind-ActivePanelIndex="_tab" Elevation="0" Rounded="true" ApplyEffectsToContainer="true" TabPanelsClass="pt-4">
+            <MudTabPanel Text="Anmelden">
+                <MudForm @ref="_loginForm">
+                    <MudTextField @bind-Value="_email" Label="E-Mail" InputType="InputType.Email" Required="true" RequiredError="E-Mail angeben" Immediate="true" AutoFocus="true" />
+                    <MudTextField @bind-Value="_password" Label="Passwort" InputType="InputType.Password" Required="true" RequiredError="Passwort angeben"
+                                  OnKeyDown="@(e => e.Key == "Enter" ? SignInAsync() : Task.CompletedTask)" Immediate="true" />
+                </MudForm>
+                <MudButton Variant="Variant.Text" Size="Size.Small" Class="mt-2 px-0" OnClick="@(() => _tab = 2)">Passwort vergessen?</MudButton>
+            </MudTabPanel>
+            <MudTabPanel Text="Registrieren">
+                <MudForm @ref="_signUpForm">
+                    <MudTextField @bind-Value="_displayName" Label="Anzeigename" Required="true" RequiredError="Name angeben" MaxLength="40" />
+                    <MudTextField @bind-Value="_email" Label="E-Mail" InputType="InputType.Email" Required="true" RequiredError="E-Mail angeben" />
+                    <MudTextField @bind-Value="_password" Label="Passwort" InputType="InputType.Password" Required="true"
+                                  Validation="@(new Func<string, string?>(v => v?.Length >= 6 ? null : "Mindestens 6 Zeichen"))" Immediate="true" />
+                    <MudTextField @bind-Value="_password2" Label="Passwort wiederholen" InputType="InputType.Password" Required="true"
+                                  Validation="@(new Func<string, string?>(v => v == _password ? null : "Passwörter stimmen nicht überein"))" Immediate="true" />
+                </MudForm>
+            </MudTabPanel>
+            <MudTabPanel Text="Passwort vergessen">
+                <MudText Typo="Typo.body2" Class="mb-2">Wir schicken dir einen Link, mit dem du ein neues Passwort festlegen kannst.</MudText>
+                <MudTextField @bind-Value="_email" Label="E-Mail" InputType="InputType.Email" />
+            </MudTabPanel>
+        </MudTabs>
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3">@_error</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())">Abbrechen</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_busy" OnClick="SubmitAsync">
+            @if (_busy)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            @(_tab switch { 0 => "Anmelden", 1 => "Konto erstellen", _ => "Link senden" })
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private MudForm? _loginForm;
+    private MudForm? _signUpForm;
+    private int _tab;
+    private string _email = "";
+    private string _password = "";
+    private string _password2 = "";
+    private string _displayName = "";
+    private string? _error;
+    private bool _busy;
+
+    private Task SubmitAsync() => _tab switch
+    {
+        0 => SignInAsync(),
+        1 => SignUpAsync(),
+        _ => ResetAsync()
+    };
+
+    private async Task SignInAsync()
+    {
+        if (_loginForm is not null)
+        {
+            await _loginForm.ValidateAsync();
+            if (!_loginForm.IsValid) return;
+        }
+
+        await RunAsync(async () =>
+        {
+            await Auth.SignInAsync(_email.Trim(), _password);
+            Snackbar.Add("Willkommen zurück!", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        });
+    }
+
+    private async Task SignUpAsync()
+    {
+        if (_signUpForm is not null)
+        {
+            await _signUpForm.ValidateAsync();
+            if (!_signUpForm.IsValid) return;
+        }
+
+        await RunAsync(async () =>
+        {
+            var loggedIn = await Auth.SignUpAsync(_email.Trim(), _password, _displayName.Trim());
+            if (loggedIn)
+            {
+                Snackbar.Add("Konto erstellt – viel Spaß!", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Fast geschafft: bitte bestätige deine E-Mail-Adresse über den Link in der Mail.", Severity.Info,
+                    o => o.VisibleStateDuration = 8000);
+            }
+            MudDialog.Close(DialogResult.Ok(loggedIn));
+        });
+    }
+
+    private async Task ResetAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_email))
+        {
+            _error = "Bitte E-Mail angeben.";
+            return;
+        }
+
+        await RunAsync(async () =>
+        {
+            await Auth.SendPasswordResetAsync(_email.Trim());
+            Snackbar.Add("Falls ein Konto existiert, ist die Mail unterwegs.", Severity.Info);
+            MudDialog.Close(DialogResult.Ok(false));
+        });
+    }
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            await action();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

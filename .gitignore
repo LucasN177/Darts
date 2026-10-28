@@ -1,0 +1,14 @@
+# Build-Ausgaben
+bin/
+obj/
+/artifacts/
+/.publish/
+
+# IDE
+.idea/
+.vs/
+*.user
+.DS_Store
+
+# Lokale Claude-Konfiguration
+.claude/

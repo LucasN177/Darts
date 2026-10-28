@@ -1,0 +1,13 @@
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Nicht gefunden · Darts</PageTitle>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <MudText Typo="Typo.h5" Class="mt-6">Diese Seite gibt es nicht.</MudText>
+            <MudButton Href="" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4">Zur Startseite</MudButton>
+        </LayoutView>
+    </NotFound>
+</Router>

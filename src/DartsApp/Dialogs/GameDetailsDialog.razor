@@ -1,0 +1,47 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@GameModes.Get(Game.Mode).Name</MudText>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+            @Game.Settings.Describe() · @((Game.FinishedAt ?? Game.StartedAt).ToLocalTime().ToString("dd.MM.yyyy HH:mm"))@(Duration is { } d ? $" · {d}" : "")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="table-scroll">
+            <ResultTable Mode="Game.Mode" Results="Game.Results" Settings="Game.Settings" />
+        </div>
+        @if (_engine is not null)
+        {
+            <MudText Typo="Typo.subtitle2" Class="mt-4 mb-1">Aufnahmen</MudText>
+            <div class="table-scroll" style="max-height:45vh;overflow-y:auto">
+                <TurnHistory Engine="_engine" />
+            </div>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Close())">Schließen</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter, EditorRequired] public GameRecord Game { get; set; } = default!;
+
+    private GameEngine? _engine;
+
+    private string? Duration => Game.FinishedAt is { } f && f > Game.StartedAt
+        ? (f - Game.StartedAt) is var span && span.TotalHours >= 1 ? span.ToString(@"h\:mm\:ss") : span.ToString(@"m\:ss") + " min"
+        : null;
+
+    protected override void OnInitialized()
+    {
+        if (Game.Darts.Count == 0 || Game.Players.Count == 0) return;
+        try
+        {
+            _engine = GameModes.Restore(Game.Settings, Game.Players, Game.Darts);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Spiel konnte nicht nachgespielt werden: {ex.Message}");
+        }
+    }
+}

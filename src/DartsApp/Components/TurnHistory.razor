@@ -1,0 +1,68 @@
+@* Aufnahmen eines Spiels, neueste zuerst. *@
+
+@if (_turns.Count == 0)
+{
+    <MudText Typo="Typo.body2" Class="mud-text-secondary">Noch keine Aufnahmen.</MudText>
+}
+else
+{
+    <MudSimpleTable Dense="true" Hover="true" Striped="true" Class="turn-history">
+        <thead>
+            <tr>
+                @if (ShowLegs)
+                {
+                    <th>Leg</th>
+                }
+                <th>Rd.</th>
+                <th>Spieler</th>
+                <th>Darts</th>
+                <th class="text-right">@ScoreLabel</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var turn in _turns)
+            {
+                <tr>
+                    @if (ShowLegs)
+                    {
+                        <td>@(Engine.Settings.SetsToWin > 1 ? $"{turn.Set}.{turn.Leg}" : turn.Leg.ToString())</td>
+                    }
+                    <td>@turn.Round</td>
+                    <td>@Engine.Players[turn.PlayerIndex].Name</td>
+                    <td class="darts-cell">@string.Join("  ", turn.Darts.Select(d => d.ToString()))</td>
+                    <td class="text-right"><b>@(turn.Bust ? "–" : turn.Score.ToString())</b></td>
+                    <td>
+                        @if (turn.Note is not null)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(turn.Bust ? Color.Error : Color.Secondary)">@turn.Note</MudChip>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </MudSimpleTable>
+}
+
+@code {
+    [Parameter, EditorRequired] public GameEngine Engine { get; set; } = default!;
+    [Parameter] public int? Max { get; set; }
+
+    private List<Turn> _turns = [];
+
+    private bool ShowLegs => Engine.Settings.Mode == GameMode.X01 && (Engine.Settings.LegsToWin > 1 || Engine.Settings.SetsToWin > 1);
+
+    private string ScoreLabel => Engine.Settings.Mode switch
+    {
+        GameMode.Cricket => "Marks",
+        GameMode.AroundTheClock => "Treffer",
+        _ => "Punkte"
+    };
+
+    protected override void OnParametersSet()
+    {
+        IEnumerable<Turn> turns = Engine.Turns.Reverse();
+        if (Max is { } max) turns = turns.Take(max);
+        _turns = turns.ToList();
+    }
+}

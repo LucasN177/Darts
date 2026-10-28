@@ -1,0 +1,151 @@
+@page "/"
+@implements IDisposable
+@inject AuthService Auth
+@inject DataService Data
+@inject GameSession Session
+@inject IDialogService DialogService
+
+<PageTitle>Darts</PageTitle>
+
+<MudPaper Class="hero pa-5 mb-4" Elevation="2">
+    <MudText Typo="Typo.h4">@Greeting</MudText>
+    <MudText Typo="Typo.body1" Class="mud-text-secondary mb-3">Zählen, trainieren und Fortschritt verfolgen – sieben Spielmodi von X01 bis Bob's 27.</MudText>
+    <div class="d-flex flex-wrap gap-2">
+        <MudButton Href="new" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" StartIcon="@Icons.Material.Filled.Add">Neues Spiel</MudButton>
+        @if (Session.HasActiveGame)
+        {
+            <MudButton Href="play" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large" StartIcon="@Icons.Material.Filled.PlayArrow">Spiel fortsetzen</MudButton>
+        }
+        @if (Auth.IsAvailable && !Auth.IsLoggedIn)
+        {
+            <MudButton Variant="Variant.Text" Size="Size.Large" StartIcon="@Icons.Material.Filled.CloudUpload" OnClick="LoginAsync">Anmelden &amp; Spiele sichern</MudButton>
+        }
+    </div>
+</MudPaper>
+
+@if (Data.SetupError is not null)
+{
+    <MudAlert Severity="Severity.Warning" Class="mb-4">@Data.SetupError</MudAlert>
+}
+
+@if (Session.HasActiveGame && Session.Engine is { } engine)
+{
+    <MudPaper Class="pa-4 mb-4 d-flex align-center flex-wrap gap-3" Elevation="1">
+        <MudIcon Icon="@Icons.Material.Filled.SportsScore" Color="Color.Primary" Size="Size.Large" />
+        <div>
+            <MudText Typo="Typo.subtitle1"><b>Laufendes Spiel: @GameModes.Get(engine.Settings.Mode).Name</b></MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">@string.Join(" vs. ", engine.Players.Select(p => p.Name)) · @engine.Status</MudText>
+        </div>
+        <MudSpacer />
+        <MudButton Href="play" Variant="Variant.Filled" Color="Color.Primary">Weiter</MudButton>
+    </MudPaper>
+}
+
+<MudText Typo="Typo.h6" Class="mb-2">Spielmodi</MudText>
+<div class="mode-grid large mb-5">
+    @foreach (var info in GameModes.All)
+    {
+        <MudPaper Class="mode-tile pa-4" Elevation="1" @onclick="@(() => Navigation.NavigateTo($"new/{info.Mode}"))">
+            <MudText Typo="Typo.h6">@info.Name</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Primary">@info.Short</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mt-1">@info.Description</MudText>
+        </MudPaper>
+    }
+</div>
+
+<div class="d-flex align-center mb-2">
+    <MudText Typo="Typo.h6">Letzte Spiele</MudText>
+    <MudSpacer />
+    <MudButton Href="history" Variant="Variant.Text" Size="Size.Small">Alle anzeigen</MudButton>
+</div>
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (_recent.Count == 0)
+{
+    <MudText Typo="Typo.body2" Class="mud-text-secondary">Noch keine Spiele gespeichert.</MudText>
+}
+else
+{
+    <MudPaper Elevation="1">
+        <MudList T="GameRecord" Dense="true">
+            @foreach (var game in _recent)
+            {
+                <MudListItem T="GameRecord" OnClick="() => ShowAsync(game)">
+                    <div class="d-flex align-center gap-3">
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary" Style="min-width:90px">@((game.FinishedAt ?? game.StartedAt).ToLocalTime().ToString("dd.MM. HH:mm"))</MudText>
+                        <MudText Typo="Typo.body2"><b>@GameModes.Get(game.Mode).Name</b> · @string.Join(", ", game.Players.Select(p => p.Name))</MudText>
+                        <MudSpacer />
+                        @if (game.WinnerName is not null)
+                        {
+                            <MudChip T="string" Size="Size.Small" Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Tertiary" Variant="Variant.Text">@game.WinnerName</MudChip>
+                        }
+                    </div>
+                </MudListItem>
+            }
+        </MudList>
+    </MudPaper>
+}
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private List<GameRecord> _recent = [];
+    private bool _loading = true;
+
+    private string Greeting
+    {
+        get
+        {
+            var name = Auth.User?.MetadataString("display_name");
+            return string.IsNullOrWhiteSpace(name) ? "Game on! 🎯" : $"Game on, {name}! 🎯";
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Data.Changed += OnChanged;
+        Session.Changed += OnChanged;
+        await LoadAsync();
+    }
+
+    private void OnChanged() => InvokeAsync(async () =>
+    {
+        await LoadAsync();
+        StateHasChanged();
+    });
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _recent = (await Data.GetGamesAsync()).Take(5).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Letzte Spiele konnten nicht geladen werden: {ex.Message}");
+            _recent = [];
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task LoginAsync() =>
+        await DialogService.ShowAsync<LoginDialog>("Anmelden", new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
+
+    private async Task ShowAsync(GameRecord game)
+    {
+        var parameters = new DialogParameters<GameDetailsDialog> { { x => x.Game, game } };
+        await DialogService.ShowAsync<GameDetailsDialog>(null, parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
+    }
+
+    public void Dispose()
+    {
+        Data.Changed -= OnChanged;
+        Session.Changed -= OnChanged;
+    }
+}
