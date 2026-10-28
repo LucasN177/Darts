@@ -1,0 +1,202 @@
+@page "/play"
+@implements IDisposable
+@inject GameSession Session
+@inject DataService Data
+@inject NavigationManager Navigation
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject UiState Ui
+
+<PageTitle>@(Engine is null ? "Spiel" : GameModes.Get(Engine.Settings.Mode).Name) · Darts</PageTitle>
+
+@if (Engine is null)
+{
+    <MudPaper Class="pa-6 text-center" Elevation="1">
+        <MudText Typo="Typo.h5" Class="mb-2">Kein laufendes Spiel</MudText>
+        <MudButton Href="new" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">Neues Spiel</MudButton>
+    </MudPaper>
+}
+else
+{
+    var engine = Engine;
+    <div class="d-flex align-center flex-wrap gap-2 mb-3">
+        <div>
+            <MudText Typo="Typo.h5">@GameModes.Get(engine.Settings.Mode).Name</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">@engine.Settings.Describe() · @engine.Status</MudText>
+        </div>
+        <MudSpacer />
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+            <MudMenuItem Icon="@Icons.Material.Filled.Replay" OnClick="RestartAsync">Neu starten</MudMenuItem>
+            <MudMenuItem Icon="@Icons.Material.Filled.Tune" Href="new">Neues Spiel einrichten</MudMenuItem>
+            @if (engine.Players.Any(p => p.IsBot))
+            {
+                <MudMenuItem Icon="@(Ui.FastBots ? Icons.Material.Filled.Speed : Icons.Material.Outlined.Speed)" OnClick="Ui.ToggleFastBotsAsync">
+                    Computer: @(Ui.FastBots ? "schnell" : "normal") werfen
+                </MudMenuItem>
+            }
+            <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="AbandonAsync">Spiel abbrechen</MudMenuItem>
+        </MudMenu>
+    </div>
+
+    @if (engine.IsFinished)
+    {
+        <MudPaper Class="pa-4 mb-4 result-banner" Elevation="4">
+            <div class="d-flex align-center flex-wrap gap-3">
+                <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Tertiary" Style="font-size:3rem" />
+                <div>
+                    <MudText Typo="Typo.h5">@(engine.Winner is { } w ? $"{engine.Players[w].Name} gewinnt!" : "Spiel beendet")</MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                        @if (Session.IsSaving)
+                        {
+                            <span>Wird gespeichert …</span>
+                        }
+                        else if (Session.IsSaved)
+                        {
+                            <span>Gespeichert @(Data.IsCloud ? "in deinem Konto" : "in diesem Browser").</span>
+                        }
+                        else if (Session.SaveError is not null)
+                        {
+                            <span class="mud-error-text">Speichern fehlgeschlagen: @Session.SaveError</span>
+                        }
+                    </MudText>
+                </div>
+                <MudSpacer />
+                @if (Session.SaveError is not null)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="Session.SaveResultAsync">Erneut speichern</MudButton>
+                }
+                <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Undo" OnClick="Session.UndoAsync">Letzten Dart zurück</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Replay" OnClick="RematchAsync">Revanche</MudButton>
+                <MudButton Variant="Variant.Text" Href="new">Neues Spiel</MudButton>
+            </div>
+            <div class="mt-3 table-scroll">
+                <ResultTable Mode="engine.Settings.Mode" Results="engine.GetResults()" Settings="engine.Settings" />
+            </div>
+        </MudPaper>
+    }
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="7">
+            @if (engine is CricketEngine cricket)
+            {
+                <div class="table-scroll mb-3">
+                    <CricketBoard Engine="cricket" />
+                </div>
+            }
+            <div class="player-grid @(engine.PlayerCount == 1 ? "single" : "")">
+                @for (var i = 0; i < engine.PlayerCount; i++)
+                {
+                    <PlayerCard View="engine.GetView(i)" IsWinner="@(engine.Winner == i)" IsBot="@engine.Players[i].IsBot" />
+                }
+            </div>
+        </MudItem>
+
+        <MudItem xs="12" md="5">
+            @if (!engine.IsFinished)
+            {
+                <MudPaper Class="pa-3 mb-3" Elevation="2">
+                    <div class="d-flex align-center">
+                        @if (engine.IsBotTurn)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Secondary" Class="mr-2" />
+                            <MudText Typo="Typo.subtitle1"><b>@engine.Players[engine.CurrentPlayer].Name</b> wirft …</MudText>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.subtitle1"><b>@engine.Players[engine.CurrentPlayer].Name</b> ist dran</MudText>
+                        }
+                        <MudSpacer />
+                        <MudText Typo="Typo.h6">@(engine.CurrentTurn?.Score ?? 0)</MudText>
+                    </div>
+                    <div class="turn-slots my-2">
+                        @for (var i = 0; i < 3; i++)
+                        {
+                            var dart = engine.CurrentTurn is { } t && i < t.Darts.Count ? t.Darts[i] : (Dart?)null;
+                            <div class="turn-slot @(dart is null ? "empty" : "")">@(dart?.ToString() ?? "–")</div>
+                        }
+                    </div>
+                    @if (engine.Hint is { } hint)
+                    {
+                        <MudAlert Severity="Severity.Info" Dense="true" Variant="Variant.Text" Icon="@Icons.Material.Filled.TrackChanges">@hint</MudAlert>
+                    }
+                    @if (engine.Message is { } message)
+                    {
+                        <MudAlert Severity="@(message.StartsWith("Bust") ? Severity.Warning : Severity.Success)" Dense="true" Variant="Variant.Text" Class="mt-1">@message</MudAlert>
+                    }
+                </MudPaper>
+            }
+
+            <DartPad OnDart="ThrowAsync" OnUndo="Session.UndoAsync" CanUndo="@(engine.CanUndo && engine.Players.Any(p => !p.IsBot))" Disabled="@(engine.IsFinished || engine.IsBotTurn)"
+                     Highlight="@(engine.IsFinished ? null : engine.RelevantSegments)" />
+
+            @if (!engine.IsFinished && !engine.IsBotTurn)
+            {
+                <MudButton FullWidth="true" Variant="Variant.Outlined" Class="mt-2" StartIcon="@Icons.Material.Filled.SkipNext"
+                           OnClick="Session.FinishTurnAsync">Aufnahme beenden (Rest = Miss)</MudButton>
+            }
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudExpansionPanels Elevation="1">
+                <MudExpansionPanel Text="@($"Aufnahmen ({engine.Turns.Count})")" Expanded="@engine.IsFinished">
+                    <div class="table-scroll">
+                        <TurnHistory Engine="engine" Max="@(engine.IsFinished ? null : 30)" />
+                    </div>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private GameEngine? Engine => Session.Engine;
+
+    protected override void OnInitialized()
+    {
+        Session.Changed += OnChanged;
+        Ui.Changed += OnChanged;
+        // Nach dem Neuladen der Seite weiterspielen, falls ein Computergegner dran ist.
+        Session.EnsureBotsPlaying();
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private async Task ThrowAsync(Dart dart)
+    {
+        await Session.ThrowAsync(dart);
+        // Die letzte Aufnahme ist nur dann abgeschlossen, wenn dieser Dart sie beendet hat.
+        if (Engine is { Settings.Mode: GameMode.X01 or GameMode.HighScore } e && e.Turns.Count > 0
+            && e.Turns[^1] is { IsComplete: true, Bust: false, Score: 180 })
+            Snackbar.Add("🎯 180!", Severity.Success);
+    }
+
+    private async Task RematchAsync()
+    {
+        await Session.RematchAsync();
+    }
+
+    private async Task RestartAsync()
+    {
+        if (Engine is null) return;
+        if (await Confirm("Spiel neu starten?", "Alle Würfe dieses Spiels gehen verloren.", "Neu starten") != true) return;
+        await Session.StartAsync(Engine.Settings, Engine.Players);
+    }
+
+    private async Task AbandonAsync()
+    {
+        if (Engine is { IsFinished: false, Turns.Count: > 0 }
+            && await Confirm("Spiel abbrechen?", "Das Spiel wird nicht gespeichert.", "Abbrechen") != true)
+            return;
+        await Session.AbandonAsync();
+        Navigation.NavigateTo("");
+    }
+
+    private Task<bool?> Confirm(string title, string text, string yes) =>
+        DialogService.ShowMessageBoxAsync(title, text, yesText: yes, cancelText: "Zurück");
+
+    public void Dispose()
+    {
+        Session.Changed -= OnChanged;
+        Ui.Changed -= OnChanged;
+    }
+}

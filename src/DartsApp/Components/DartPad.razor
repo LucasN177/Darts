@@ -1,0 +1,51 @@
+@* Eingabefeld für einzelne Darts: Multiplikator wählen, dann Zahl tippen. *@
+
+<div class="dart-pad @(Disabled ? "disabled" : "")">
+    <div class="dart-pad-modifiers">
+        <button type="button" class="pad-btn mod @(_multiplier == 1 ? "active" : "")" @onclick="() => _multiplier = 1">Single</button>
+        <button type="button" class="pad-btn mod double @(_multiplier == 2 ? "active" : "")" @onclick="() => Toggle(2)">Double</button>
+        <button type="button" class="pad-btn mod triple @(_multiplier == 3 ? "active" : "")" @onclick="() => Toggle(3)">Triple</button>
+    </div>
+
+    <div class="dart-pad-numbers">
+        @for (var i = 1; i <= 20; i++)
+        {
+            var segment = i;
+            <button type="button" class="pad-btn num @(IsRelevant(segment) ? "relevant" : "")" disabled="@Disabled" @onclick="() => Select(segment)">
+                @(_multiplier switch { 2 => "D", 3 => "T", _ => "" })@segment
+            </button>
+        }
+    </div>
+
+    <div class="dart-pad-specials">
+        <button type="button" class="pad-btn special @(IsRelevant(25) ? "relevant" : "")" disabled="@(Disabled || _multiplier == 3)" @onclick="() => Emit(Dart.OuterBull)">25</button>
+        <button type="button" class="pad-btn special bull @(IsRelevant(25) ? "relevant" : "")" disabled="@(Disabled || _multiplier == 3)" @onclick="() => Emit(Dart.Bullseye)">Bull</button>
+        <button type="button" class="pad-btn special miss" disabled="@Disabled" @onclick="() => Emit(Dart.Miss)">Miss</button>
+        <button type="button" class="pad-btn special undo" disabled="@(!CanUndo)" @onclick="OnUndo">
+            <MudIcon Icon="@Icons.Material.Filled.Undo" Size="Size.Small" /> Zurück
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback<Dart> OnDart { get; set; }
+    [Parameter] public EventCallback OnUndo { get; set; }
+    [Parameter] public bool CanUndo { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public IReadOnlySet<int>? Highlight { get; set; }
+
+    private int _multiplier = 1;
+
+    private bool IsRelevant(int segment) => Highlight?.Contains(segment) == true;
+
+    private void Toggle(int multiplier) => _multiplier = _multiplier == multiplier ? 1 : multiplier;
+
+    private Task Select(int segment) => Emit(new Dart(segment, _multiplier));
+
+    private async Task Emit(Dart dart)
+    {
+        if (Disabled) return;
+        _multiplier = 1;
+        await OnDart.InvokeAsync(dart);
+    }
+}

@@ -1,0 +1,155 @@
+@page "/players"
+@inject DataService Data
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Spieler · Darts</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Spieler</MudText>
+
+<MudPaper Class="pa-4" Elevation="1" Style="max-width:640px">
+    <div class="d-flex align-center gap-2 mb-2">
+        <MudTextField @bind-Value="_newName" Label="Neuer Spieler" MaxLength="40" Immediate="true"
+                      OnKeyDown="@(e => e.Key == "Enter" ? AddAsync() : Task.CompletedTask)" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@string.IsNullOrWhiteSpace(_newName)" OnClick="AddAsync">Hinzufügen</MudButton>
+    </div>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (_error is not null)
+    {
+        <MudAlert Severity="Severity.Error">@_error</MudAlert>
+    }
+    else if (_players.Count == 0)
+    {
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">Noch keine Spieler angelegt.</MudText>
+    }
+    else
+    {
+        <MudList T="Player" Dense="true">
+            @foreach (var player in _players)
+            {
+                <MudListItem T="Player">
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@(player.IsSelf ? Icons.Material.Filled.Person : Icons.Material.Outlined.Person)" Class="mr-3" />
+                        @if (_editing == player.Id)
+                        {
+                            <MudTextField @bind-Value="_editName" Margin="Margin.Dense" AutoFocus="true" MaxLength="40"
+                                          OnKeyDown="@(e => e.Key == "Enter" ? SaveRenameAsync(player) : Task.CompletedTask)" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Check" Size="Size.Small" OnClick="() => SaveRenameAsync(player)" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="() => _editing = null" />
+                        }
+                        else
+                        {
+                            <MudText>@player.Name</MudText>
+                            @if (player.IsSelf)
+                            {
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Class="ml-2">Du</MudChip>
+                            }
+                            <MudSpacer />
+                            @if (!player.IsSelf)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => StartRename(player)" aria-label="Umbenennen" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" OnClick="() => DeleteAsync(player)" aria-label="Löschen" />
+                            }
+                        }
+                    </div>
+                </MudListItem>
+            }
+        </MudList>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+            Deinen eigenen Namen änderst du im Profil. Gelöschte Spieler bleiben in vergangenen Spielen namentlich erhalten.
+        </MudText>
+    }
+</MudPaper>
+
+@code {
+    private IReadOnlyList<Player> _players = [];
+    private string _newName = "";
+    private Guid? _editing;
+    private string _editName = "";
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _players = await Data.GetPlayersAsync();
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task AddAsync()
+    {
+        var name = _newName.Trim();
+        if (name.Length == 0) return;
+        if (_players.Any(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)))
+        {
+            Snackbar.Add("Diesen Namen gibt es schon.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            await Data.AddPlayerAsync(name);
+            _newName = "";
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private void StartRename(Player player)
+    {
+        _editing = player.Id;
+        _editName = player.Name;
+    }
+
+    private async Task SaveRenameAsync(Player player)
+    {
+        var name = _editName.Trim();
+        if (name.Length == 0) return;
+        try
+        {
+            await Data.RenamePlayerAsync(player.Id, name);
+            _editing = null;
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteAsync(Player player)
+    {
+        var ok = await DialogService.ShowMessageBoxAsync("Spieler löschen?", $"{player.Name} wird aus der Spielerliste entfernt.",
+            yesText: "Löschen", cancelText: "Abbrechen");
+        if (ok != true) return;
+
+        try
+        {
+            await Data.DeletePlayerAsync(player.Id);
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}

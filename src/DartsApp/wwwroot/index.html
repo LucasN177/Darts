@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#141417" />
+    <meta name="description" content="Darts zählen und trainieren: X01, Cricket, Around the Clock, Shanghai, Bob's 27, 121 Checkout und High Score." />
+    <title>Darts</title>
+    <base href="/" />
+    <script>
+        // GitHub Pages SPA-Routing: 404.html leitet tiefe Links als ?p=/pfad hierher um.
+        (function (l) {
+            var match = l.search.match(/[?&]p=([^&]*)/);
+            if (match) {
+                var path = decodeURIComponent(match[1]).replace(/^\//, '');
+                var base = document.querySelector('base').getAttribute('href');
+                window.history.replaceState(null, '', base + path + l.hash);
+            }
+        })(window.location);
+    </script>
+    <link rel="preload" id="webassembly" />
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="css/app.css" />
+    <link href="manifest.webmanifest" rel="manifest" />
+    <link rel="icon" type="image/png" href="icon-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
+    <script type="importmap"></script>
+</head>
+
+<body>
+    <div id="app">
+        <svg class="loading-progress">
+            <circle r="40%" cx="50%" cy="50%" />
+            <circle r="40%" cx="50%" cy="50%" />
+        </svg>
+        <div class="loading-progress-text"></div>
+    </div>
+
+    <div id="blazor-error-ui">
+        Es ist ein Fehler aufgetreten.
+        <a href="." class="reload">Neu laden</a>
+        <span class="dismiss">🗙</span>
+    </div>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+    <script>navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });</script>
+</body>
+
+</html>

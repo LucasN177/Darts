@@ -1,0 +1,231 @@
+@page "/stats"
+@using DartsApp.Core.Stats
+@inject DataService Data
+@inject AuthService Auth
+
+<PageTitle>Statistik · Darts</PageTitle>
+
+<div class="d-flex align-center flex-wrap gap-2 mb-4">
+    <MudText Typo="Typo.h4">Statistik</MudText>
+    <MudSpacer />
+    <MudSelect T="string" Value="_playerKey" ValueChanged="SelectPlayer" Label="Spieler" Dense="true" Variant="Variant.Outlined" Style="min-width:180px">
+        @foreach (var p in _players)
+        {
+            <MudSelectItem T="string" Value="@p.Key">@p.Name</MudSelectItem>
+        }
+    </MudSelect>
+    <MudSelect T="GameMode" Value="_mode" ValueChanged="@(m => { _mode = m; Compute(); })" Label="Spielmodus" Dense="true" Variant="Variant.Outlined" Style="min-width:180px">
+        @foreach (var info in GameModes.All)
+        {
+            <MudSelectItem T="GameMode" Value="@info.Mode">@info.Name</MudSelectItem>
+        }
+    </MudSelect>
+</div>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else if (_players.Count == 0)
+{
+    <MudPaper Class="pa-6" Elevation="1">
+        <MudText>Noch keine Spiele vorhanden. <MudLink Href="new">Starte dein erstes Spiel!</MudLink></MudText>
+    </MudPaper>
+}
+else
+{
+    <div class="stat-grid mb-4">
+        <StatTile Label="Spiele" Value="@_stats.Games.ToString()" />
+        <StatTile Label="Siege" Value="@($"{_stats.Wins} ({_stats.WinRate:P0})")" />
+        @switch (_mode)
+        {
+            case GameMode.X01:
+                <StatTile Label="3-Dart-Average" Value="@_stats.Average.ToString("0.00")" Highlight="true" />
+                <StatTile Label="Bester Average" Value="@_stats.BestAverage.ToString("0.00")" />
+                <StatTile Label="First 9" Value="@(_stats.First9Average?.ToString("0.00") ?? "–")" />
+                <StatTile Label="Checkout-Quote" Value="@Pct(_stats.CheckoutRate)" Sub="@($"{_stats.CheckoutsHit} / {_stats.CheckoutAttempts}")" />
+                <StatTile Label="Höchster Checkout" Value="@_stats.HighestCheckout.ToString()" />
+                <StatTile Label="Höchste Aufnahme" Value="@_stats.HighestTurn.ToString()" />
+                <StatTile Label="180er" Value="@_stats.Count180.ToString()" />
+                <StatTile Label="140+" Value="@_stats.Count140.ToString()" />
+                <StatTile Label="100+" Value="@_stats.Count100.ToString()" />
+                <StatTile Label="Darts gesamt" Value="@_stats.DartsThrown.ToString()" />
+                break;
+            case GameMode.Cricket:
+                <StatTile Label="Marks pro Runde" Value="@_stats.Average.ToString("0.00")" Highlight="true" />
+                <StatTile Label="Beste MPR" Value="@_stats.BestAverage.ToString("0.00")" />
+                <StatTile Label="Ø Punkte" Value="@_stats.AverageScore.ToString("0")" />
+                <StatTile Label="Darts gesamt" Value="@_stats.DartsThrown.ToString()" />
+                break;
+            case GameMode.AroundTheClock:
+                <StatTile Label="Trefferquote" Value="@Pct(_stats.HitRate)" Highlight="true" />
+                <StatTile Label="Bestes Spiel" Value="@(_stats.FewestDartsWin is { } f ? $"{f} Darts" : "–")" />
+                <StatTile Label="Darts gesamt" Value="@_stats.DartsThrown.ToString()" />
+                break;
+            case GameMode.Checkout121:
+                <StatTile Label="Checkout-Quote" Value="@Pct(_stats.CheckoutRate)" Highlight="true" Sub="@($"{_stats.CheckoutsHit} / {_stats.CheckoutAttempts}")" />
+                <StatTile Label="Höchstes Ziel" Value="@(_stats.HighestCheckout > 0 ? _stats.HighestCheckout.ToString() : "–")" />
+                <StatTile Label="Meiste Checkouts" Value="@_stats.BestScore.ToString()" />
+                break;
+            case GameMode.Bobs27:
+                <StatTile Label="Ø Punkte" Value="@_stats.AverageScore.ToString("0")" Highlight="true" />
+                <StatTile Label="Bestes Ergebnis" Value="@_stats.BestScore.ToString()" />
+                <StatTile Label="Doppelquote" Value="@Pct(_stats.HitRate)" />
+                break;
+            case GameMode.Shanghai:
+                <StatTile Label="Ø Punkte" Value="@_stats.AverageScore.ToString("0")" Highlight="true" />
+                <StatTile Label="Bestes Ergebnis" Value="@_stats.BestScore.ToString()" />
+                <StatTile Label="Trefferquote" Value="@Pct(_stats.HitRate)" />
+                break;
+            case GameMode.HighScore:
+                <StatTile Label="Ø Punkte" Value="@_stats.AverageScore.ToString("0")" Highlight="true" />
+                <StatTile Label="Bestes Ergebnis" Value="@_stats.BestScore.ToString()" />
+                <StatTile Label="3-Dart-Average" Value="@_stats.Average.ToString("0.00")" />
+                <StatTile Label="180er" Value="@_stats.Count180.ToString()" />
+                break;
+            case GameMode.Killer:
+                <StatTile Label="Siegquote" Value="@_stats.WinRate.ToString("P0")" Highlight="true" />
+                <StatTile Label="Darts gesamt" Value="@_stats.DartsThrown.ToString()" />
+                break;
+            case GameMode.Baseball:
+                <StatTile Label="Ø Runs" Value="@_stats.AverageScore.ToString("0.0")" Highlight="true" />
+                <StatTile Label="Meiste Runs" Value="@_stats.BestScore.ToString()" />
+                <StatTile Label="Trefferquote" Value="@Pct(_stats.HitRate)" />
+                break;
+            default:
+                <StatTile Label="Ø Punkte" Value="@_stats.AverageScore.ToString("0")" Highlight="true" />
+                <StatTile Label="Bestes Ergebnis" Value="@_stats.BestScore.ToString()" />
+                <StatTile Label="Darts gesamt" Value="@_stats.DartsThrown.ToString()" />
+                break;
+        }
+    </div>
+
+    @if (_trend.Count >= 2)
+    {
+        <MudPaper Class="pa-4 mb-4" Elevation="1">
+            <MudText Typo="Typo.h6">Verlauf: @StatsCalculator.KeyLabel(_mode)</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">Letzte @_trend.Count Spiele</MudText>
+            <MudChart T="double" ChartType="ChartType.Line" ChartSeries="@_series" ChartLabels="@_labels" Height="280px" Width="100%" />
+        </MudPaper>
+    }
+
+    <MudPaper Class="pa-4" Elevation="1">
+        <MudText Typo="Typo.h6" Class="mb-2">Letzte Spiele</MudText>
+        @if (_recent.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">Keine Spiele in diesem Modus.</MudText>
+        }
+        else
+        {
+            <MudSimpleTable Dense="true" Hover="true">
+                <thead>
+                    <tr>
+                        <th>Datum</th>
+                        <th>Einstellungen</th>
+                        <th>Gegner</th>
+                        <th class="text-right">@StatsCalculator.KeyLabel(_mode)</th>
+                        <th class="text-right">Ergebnis</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var (game, result) in _recent)
+                    {
+                        <tr>
+                            <td>@game.FinishedAt!.Value.ToLocalTime().ToString("dd.MM.yy")</td>
+                            <td>@game.Settings.Describe()</td>
+                            <td>@(game.Players.Count <= 1 ? "Solo" : string.Join(", ", game.Results.Where(r => r.Position != result.Position).Select(r => r.Name)))</td>
+                            <td class="text-right">@StatsCalculator.KeyValue(_mode, result).ToString(_mode is GameMode.X01 or GameMode.HighScore or GameMode.Cricket ? "0.00" : "0")</td>
+                            <td class="text-right">
+                                @if (result.IsWinner)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Success">Sieg</MudChip>
+                                }
+                                else
+                                {
+                                    <span>Platz @result.Rank</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    </MudPaper>
+}
+
+@code {
+    private sealed record PlayerOption(string Key, Guid? Id, string Name);
+
+    private IReadOnlyList<GameRecord> _games = [];
+    private List<PlayerOption> _players = [];
+    private string? _playerKey;
+    private GameMode _mode = GameMode.X01;
+    private ModeStats _stats = new();
+    private IReadOnlyList<StatPoint> _trend = [];
+    private List<(GameRecord Game, PlayerResult Result)> _recent = [];
+    private List<ChartSeries<double>> _series = [];
+    private string[] _labels = [];
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _games = await Data.GetGamesAsync();
+            var saved = await Data.GetPlayersAsync();
+
+            // Gespeicherte Spieler zuerst, danach Gäste aus vergangenen Spielen (ohne Computergegner).
+            _players = saved.Select(p => new PlayerOption(p.Id.ToString(), p.Id, p.Name)).ToList();
+            var guests = _games.SelectMany(g => g.Results)
+                .Where(r => !r.Extra.ContainsKey("bot"))
+                .Where(r => r.PlayerId is null || saved.All(p => p.Id != r.PlayerId))
+                .Select(r => r.Name.Trim())
+                .Where(n => _players.All(p => !string.Equals(p.Name, n, StringComparison.OrdinalIgnoreCase)))
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+            _players.AddRange(guests.Select(n => new PlayerOption("name:" + n, null, n)));
+
+            _playerKey = saved.FirstOrDefault(p => p.IsSelf)?.Id.ToString() ?? _players.FirstOrDefault()?.Key;
+
+            // Modus mit den meisten Spielen vorauswählen.
+            if (_games.Count > 0)
+                _mode = _games.GroupBy(g => g.Mode).OrderByDescending(g => g.Count()).First().Key;
+
+            Compute();
+        }
+        catch (Exception ex)
+        {
+            _error = $"Daten konnten nicht geladen werden: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private static string Pct(double? value) => value is { } v ? v.ToString("P1") : "–";
+
+    private void SelectPlayer(string key)
+    {
+        _playerKey = key;
+        Compute();
+    }
+
+    private void Compute()
+    {
+        var player = _players.FirstOrDefault(p => p.Key == _playerKey);
+        if (player is null) return;
+
+        var entries = StatsCalculator.ResultsOf(_games, player.Id, player.Name).ToList();
+        _stats = StatsCalculator.Aggregate(_mode, entries);
+        _trend = StatsCalculator.Trend(_mode, entries);
+        _recent = entries.Where(e => e.Game.Mode == _mode).OrderByDescending(e => e.Game.FinishedAt).Take(15).ToList();
+
+        _series = [new ChartSeries<double> { Name = StatsCalculator.KeyLabel(_mode), Data = _trend.Select(t => Math.Round(t.Value, 2)).ToArray() }];
+        _labels = _trend.Select(t => t.Date.ToLocalTime().ToString("dd.MM.")).ToArray();
+    }
+}

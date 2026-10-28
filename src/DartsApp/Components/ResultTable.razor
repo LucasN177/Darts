@@ -1,0 +1,161 @@
+@* Endergebnis eines Spiels mit den für den Modus relevanten Kennzahlen. *@
+
+<MudSimpleTable Dense="true" Hover="true" Class="result-table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Spieler</th>
+            @switch (Mode)
+            {
+                case GameMode.X01:
+                    @if (ShowLegs)
+                    {
+                        <th class="text-right">@(Settings?.SetsToWin > 1 ? "Sets" : "Legs")</th>
+                    }
+                    <th class="text-right">Ø</th>
+                    <th class="text-right">First 9</th>
+                    <th class="text-right">Darts</th>
+                    <th class="text-right">Checkout</th>
+                    <th class="text-right">Höchstes</th>
+                    <th class="text-right">180/140+/100+</th>
+                    break;
+                case GameMode.Cricket:
+                    <th class="text-right">Punkte</th>
+                    <th class="text-right">MPR</th>
+                    <th class="text-right">Darts</th>
+                    break;
+                case GameMode.AroundTheClock:
+                    <th class="text-right">Ziele</th>
+                    <th class="text-right">Darts</th>
+                    <th class="text-right">Trefferquote</th>
+                    break;
+                case GameMode.Checkout121:
+                    <th class="text-right">Checkouts</th>
+                    <th class="text-right">Bestes Ziel</th>
+                    <th class="text-right">Darts</th>
+                    break;
+                case GameMode.Bobs27:
+                    <th class="text-right">Punkte</th>
+                    <th class="text-right">Treffer</th>
+                    <th class="text-right">Quote</th>
+                    break;
+                case GameMode.Killer:
+                    <th class="text-right">Leben</th>
+                    <th class="text-right">Kills</th>
+                    <th class="text-right">Zahl</th>
+                    <th class="text-right">Darts</th>
+                    break;
+                case GameMode.Baseball:
+                    <th class="text-right">Runs</th>
+                    <th class="text-right">Trefferquote</th>
+                    <th class="text-right">Darts</th>
+                    break;
+                case GameMode.HalveIt:
+                    <th class="text-right">Punkte</th>
+                    <th class="text-right">Halbiert</th>
+                    <th class="text-right">Darts</th>
+                    break;
+                case GameMode.Gotcha:
+                    <th class="text-right">Punkte</th>
+                    <th class="text-right">Gotchas</th>
+                    <th class="text-right">Darts</th>
+                    break;
+                default:
+                    <th class="text-right">Punkte</th>
+                    <th class="text-right">Ø</th>
+                    <th class="text-right">Darts</th>
+                    break;
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Results.OrderBy(r => r.Rank).ThenBy(r => r.Position))
+        {
+            <tr>
+                <td>
+                    @if (r.IsWinner)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Tertiary" Size="Size.Small" />
+                    }
+                    else
+                    {
+                        @r.Rank
+                    }
+                </td>
+                <td>@r.Name@(r.Extra.ContainsKey("bot") ? " 🤖" : "")</td>
+                @switch (Mode)
+                {
+                    case GameMode.X01:
+                        @if (ShowLegs)
+                        {
+                            <td class="text-right">@(Settings?.SetsToWin > 1 ? r.SetsWon : r.LegsWon)</td>
+                        }
+                        <td class="text-right"><b>@r.Average.ToString("0.00")</b></td>
+                        <td class="text-right">@(r.First9Average?.ToString("0.00") ?? "–")</td>
+                        <td class="text-right">@r.DartsThrown</td>
+                        <td class="text-right">@(r.CheckoutRate is { } rate ? $"{r.CheckoutsHit}/{r.CheckoutAttempts} ({rate:P0})" : "–")</td>
+                        <td class="text-right">@r.HighestTurn@(r.HighestCheckout > 0 ? $" / CO {r.HighestCheckout}" : "")</td>
+                        <td class="text-right">@r.Count180 / @r.Count140 / @r.Count100</td>
+                        break;
+                    case GameMode.Cricket:
+                        <td class="text-right"><b>@r.Score</b></td>
+                        <td class="text-right">@Extra(r, "mpr", "0.00")</td>
+                        <td class="text-right">@r.DartsThrown</td>
+                        break;
+                    case GameMode.AroundTheClock:
+                        <td class="text-right"><b>@r.Score / @Extra(r, "targets", "0")</b></td>
+                        <td class="text-right">@r.DartsThrown</td>
+                        <td class="text-right">@Extra(r, "hit_rate", "P0")</td>
+                        break;
+                    case GameMode.Checkout121:
+                        <td class="text-right"><b>@r.CheckoutsHit / @r.CheckoutAttempts</b></td>
+                        <td class="text-right">@(r.HighestCheckout > 0 ? r.HighestCheckout : "–")</td>
+                        <td class="text-right">@r.DartsThrown</td>
+                        break;
+                    case GameMode.Bobs27:
+                        <td class="text-right"><b>@r.Score</b></td>
+                        <td class="text-right">@r.CheckoutsHit</td>
+                        <td class="text-right">@Extra(r, "hit_rate", "P0")</td>
+                        break;
+                    case GameMode.Killer:
+                        <td class="text-right"><b>@r.Score</b></td>
+                        <td class="text-right">@Extra(r, "kills", "0")</td>
+                        <td class="text-right">@Extra(r, "number", "0")</td>
+                        <td class="text-right">@r.DartsThrown</td>
+                        break;
+                    case GameMode.Baseball:
+                        <td class="text-right"><b>@r.Score</b></td>
+                        <td class="text-right">@Extra(r, "hit_rate", "P0")</td>
+                        <td class="text-right">@r.DartsThrown</td>
+                        break;
+                    case GameMode.HalveIt:
+                        <td class="text-right"><b>@r.Score</b></td>
+                        <td class="text-right">@Extra(r, "halved", "0")</td>
+                        <td class="text-right">@r.DartsThrown</td>
+                        break;
+                    case GameMode.Gotcha:
+                        <td class="text-right"><b>@r.Score</b></td>
+                        <td class="text-right">@Extra(r, "knockouts", "0")</td>
+                        <td class="text-right">@r.DartsThrown</td>
+                        break;
+                    default:
+                        <td class="text-right"><b>@r.Score</b></td>
+                        <td class="text-right">@(r.DartsThrown > 0 ? (r.Score * 3.0 / r.DartsThrown).ToString("0.00") : "–")</td>
+                        <td class="text-right">@r.DartsThrown</td>
+                        break;
+                }
+            </tr>
+        }
+    </tbody>
+</MudSimpleTable>
+
+@code {
+    [Parameter, EditorRequired] public GameMode Mode { get; set; }
+    [Parameter, EditorRequired] public IReadOnlyList<PlayerResult> Results { get; set; } = [];
+    [Parameter] public GameSettings? Settings { get; set; }
+
+    private bool ShowLegs => Settings is { } s && (s.LegsToWin > 1 || s.SetsToWin > 1);
+
+    private static string Extra(PlayerResult r, string key, string format) =>
+        r.Extra.TryGetValue(key, out var v) ? v.ToString(format) : "–";
+}

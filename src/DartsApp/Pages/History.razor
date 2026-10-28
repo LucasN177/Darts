@@ -1,0 +1,149 @@
+@page "/history"
+@implements IDisposable
+@inject DataService Data
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Verlauf · Darts</PageTitle>
+
+<div class="d-flex align-center flex-wrap gap-2 mb-4">
+    <MudText Typo="Typo.h4">Verlauf</MudText>
+    <MudSpacer />
+    <MudSelect T="GameMode?" Value="_mode" ValueChanged="@(v => _mode = v)" Label="Spielmodus" Dense="true" Variant="Variant.Outlined" Style="min-width:200px" Clearable="true">
+        @foreach (var info in GameModes.All)
+        {
+            <MudSelectItem T="GameMode?" Value="@info.Mode">@info.Name</MudSelectItem>
+        }
+    </MudSelect>
+</div>
+
+@if (_localCount > 0 && Data.IsCloud)
+{
+    <MudAlert Severity="Severity.Info" Class="mb-3" ContentAlignment="HorizontalAlignment.Left">
+        <div class="d-flex align-center flex-wrap gap-2">
+            <span>In diesem Browser sind noch @_localCount Spiele ohne Konto gespeichert.</span>
+            <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Info" Disabled="_importing" OnClick="ImportAsync">In mein Konto übernehmen</MudButton>
+        </div>
+    </MudAlert>
+}
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert>
+}
+
+<MudTable T="GameRecord" Items="Filtered" Loading="_loading" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="25"
+          OnRowClick="@(e => ShowAsync(e.Item!))" RowStyle="cursor:pointer">
+    <HeaderContent>
+        <MudTh>Datum</MudTh>
+        <MudTh>Modus</MudTh>
+        <MudTh>Spieler</MudTh>
+        <MudTh>Sieger</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Datum">@((context.FinishedAt ?? context.StartedAt).ToLocalTime().ToString("dd.MM.yy HH:mm"))</MudTd>
+        <MudTd DataLabel="Modus">
+            <b>@GameModes.Get(context.Mode).Name</b>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">@context.Settings.Describe()</MudText>
+        </MudTd>
+        <MudTd DataLabel="Spieler">@string.Join(", ", context.Players.Select(p => p.Name))</MudTd>
+        <MudTd DataLabel="Sieger">@(context.WinnerName ?? "–")</MudTd>
+        <MudTd Style="text-align:right">
+            <span @onclick:stopPropagation="true">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" OnClick="() => DeleteAsync(context)" aria-label="Löschen" />
+            </span>
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText Class="pa-4">Noch keine Spiele gespeichert. <MudLink Href="new">Jetzt eins starten!</MudLink></MudText>
+    </NoRecordsContent>
+    <PagerContent>
+        <MudTablePager HideRowsPerPage="true" InfoFormat="{first_item}–{last_item} von {all_items}" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private IReadOnlyList<GameRecord> _games = [];
+    private GameMode? _mode;
+    private bool _loading = true;
+    private bool _importing;
+    private int _localCount;
+    private string? _error;
+
+    private IEnumerable<GameRecord> Filtered => _mode is { } m ? _games.Where(g => g.Mode == m) : _games;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Data.Changed += OnDataChanged;
+        await LoadAsync();
+    }
+
+    private void OnDataChanged() => InvokeAsync(LoadAsync);
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+        try
+        {
+            _games = await Data.GetGamesAsync();
+            _localCount = Data.IsCloud ? await Data.CountLocalGamesAsync() : 0;
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            _error = $"Spiele konnten nicht geladen werden: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ShowAsync(GameRecord game)
+    {
+        var parameters = new DialogParameters<GameDetailsDialog> { { x => x.Game, game } };
+        await DialogService.ShowAsync<GameDetailsDialog>(null, parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
+    }
+
+    private async Task DeleteAsync(GameRecord game)
+    {
+        var ok = await DialogService.ShowMessageBoxAsync("Spiel löschen?",
+            $"{GameModes.Get(game.Mode).Name} vom {(game.FinishedAt ?? game.StartedAt).ToLocalTime():dd.MM.yyyy HH:mm} wird endgültig gelöscht.",
+            yesText: "Löschen", cancelText: "Abbrechen");
+        if (ok != true) return;
+
+        try
+        {
+            await Data.DeleteGameAsync(game.Id);
+            Snackbar.Add("Spiel gelöscht", Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task ImportAsync()
+    {
+        _importing = true;
+        try
+        {
+            var count = await Data.ImportLocalGamesAsync();
+            Snackbar.Add($"{count} Spiele übernommen", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Übernahme fehlgeschlagen: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _importing = false;
+        }
+    }
+
+    public void Dispose() => Data.Changed -= OnDataChanged;
+}

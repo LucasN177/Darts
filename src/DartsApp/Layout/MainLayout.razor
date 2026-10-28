@@ -1,0 +1,125 @@
+﻿@inherits LayoutComponentBase
+@implements IDisposable
+@inject AuthService Auth
+@inject UiState Ui
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<MudThemeProvider Theme="@_theme" IsDarkMode="@Ui.DarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1" Dense="true">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@(() => _drawerOpen = !_drawerOpen)" aria-label="Menü" />
+        <MudLink Href="" Color="Color.Inherit" Underline="Underline.None" Class="d-flex align-center gap-2 ml-1">
+            <img src="icon-192.png" alt="" width="28" height="28" />
+            <MudText Typo="Typo.h6">Darts</MudText>
+        </MudLink>
+        <MudSpacer />
+        <MudIconButton Icon="@(Ui.DarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                       Color="Color.Inherit" OnClick="@Ui.ToggleDarkModeAsync" aria-label="Hell/Dunkel umschalten" />
+        @if (Auth.IsAvailable)
+        {
+            @if (Auth.IsLoggedIn)
+            {
+                <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                    <ActivatorContent>
+                        <MudAvatar Color="Color.Secondary" Size="Size.Small" Style="cursor:pointer">@Initial</MudAvatar>
+                    </ActivatorContent>
+                    <ChildContent>
+                        <MudMenuItem Disabled="true">@Auth.User?.Email</MudMenuItem>
+                        <MudDivider />
+                        <MudMenuItem Icon="@Icons.Material.Filled.Person" OnClick="ShowProfileAsync">Profil</MudMenuItem>
+                        <MudMenuItem Icon="@Icons.Material.Filled.Logout" OnClick="SignOutAsync">Abmelden</MudMenuItem>
+                    </ChildContent>
+                </MudMenu>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Text" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Login" OnClick="ShowLoginAsync">Anmelden</MudButton>
+            }
+        }
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="1" Variant="@DrawerVariant.Responsive">
+        <NavMenu />
+    </MudDrawer>
+
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="py-4 px-2 px-sm-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+
+    private readonly MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#c62828",
+            Secondary = "#2e7d32",
+            Tertiary = "#f9a825",
+            AppbarBackground = "#1b1b1f",
+            AppbarText = "#ffffff",
+            Background = "#f4f4f6"
+        },
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#ef5350",
+            Secondary = "#66bb6a",
+            Tertiary = "#fdd835",
+            AppbarBackground = "#141417",
+            Background = "#1b1b1f",
+            Surface = "#25252b",
+            DrawerBackground = "#1f1f24"
+        },
+        LayoutProperties = new LayoutProperties { DefaultBorderRadius = "10px" }
+    };
+
+    private string Initial
+    {
+        get
+        {
+            var name = Auth.User?.MetadataString("display_name");
+            if (string.IsNullOrWhiteSpace(name)) name = Auth.User?.Email;
+            return string.IsNullOrEmpty(name) ? "?" : name[..1].ToUpperInvariant();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        Auth.Changed += OnChanged;
+        Ui.Changed += OnChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && Auth.IsPasswordRecovery)
+            await DialogService.ShowAsync<NewPasswordDialog>("Neues Passwort festlegen");
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private async Task ShowLoginAsync() => await DialogService.ShowAsync<LoginDialog>("Anmelden", new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
+
+    private async Task ShowProfileAsync() => await DialogService.ShowAsync<ProfileDialog>("Profil", new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
+
+    private async Task SignOutAsync()
+    {
+        await Auth.SignOutAsync();
+        Snackbar.Add("Abgemeldet", Severity.Info);
+        Navigation.NavigateTo("");
+    }
+
+    public void Dispose()
+    {
+        Auth.Changed -= OnChanged;
+        Ui.Changed -= OnChanged;
+    }
+}

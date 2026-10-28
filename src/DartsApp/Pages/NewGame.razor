@@ -1,0 +1,390 @@
+@page "/new"
+@page "/new/{ModeName}"
+@inject DataService Data
+@inject GameSession Session
+@inject LocalStore Store
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Neues Spiel · Darts</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Neues Spiel</MudText>
+
+<MudGrid Spacing="3">
+    <MudItem xs="12">
+        <div class="mode-grid">
+            @foreach (var info in GameModes.All)
+            {
+                <MudPaper Class="@($"mode-tile pa-3 {(info.Mode == _settings.Mode ? "selected" : "")}")" Elevation="@(info.Mode == _settings.Mode ? 4 : 1)"
+                          @onclick="() => SelectMode(info.Mode)">
+                    <MudText Typo="Typo.subtitle1"><b>@info.Name</b></MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@info.Short</MudText>
+                </MudPaper>
+            }
+        </div>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4" Elevation="1">
+            <MudText Typo="Typo.h6">@ModeInfo.Name</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">@ModeInfo.Description</MudText>
+
+            @switch (_settings.Mode)
+            {
+                case GameMode.X01:
+                    <MudText Typo="Typo.subtitle2">Startpunkte</MudText>
+                    <div class="d-flex flex-wrap gap-1 mt-1">
+                        @foreach (var score in new[] { 101, 301, 501, 701, 1001 })
+                        {
+                            var value = score;
+                            <MudChip T="int" Color="@(value == _settings.StartScore ? Color.Primary : Color.Default)"
+                                     Variant="@(value == _settings.StartScore ? Variant.Filled : Variant.Outlined)"
+                                     OnClick="@(() => Update(s => s with { StartScore = value }))">@value</MudChip>
+                        }
+                    </div>
+                    <MudNumericField T="int" Label="Eigene Startpunkte" Min="2" Max="9999" Value="@_settings.StartScore" ValueChanged="@(v => Update(s => s with { StartScore = Math.Clamp(v, 2, 9999) }))" Class="mt-2" />
+                    <MudGrid Spacing="2" Class="mt-1">
+                        <MudItem xs="6">
+                            <MudSelect T="InOutRule" Label="Einstieg" Value="@_settings.InRule" ValueChanged="@(v => Update(s => s with { InRule = v }))">
+                                <MudSelectItem Value="InOutRule.Single">Single In</MudSelectItem>
+                                <MudSelectItem Value="InOutRule.Double">Double In</MudSelectItem>
+                                <MudSelectItem Value="InOutRule.Master">Master In</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudSelect T="InOutRule" Label="Ausstieg" Value="@_settings.OutRule" ValueChanged="@(v => Update(s => s with { OutRule = v }))">
+                                <MudSelectItem Value="InOutRule.Single">Single Out</MudSelectItem>
+                                <MudSelectItem Value="InOutRule.Double">Double Out</MudSelectItem>
+                                <MudSelectItem Value="InOutRule.Master">Master Out</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudNumericField T="int" Label="Legs (First to)" Min="1" Max="21" Value="@_settings.LegsToWin" ValueChanged="@(v => Update(s => s with { LegsToWin = Math.Clamp(v, 1, 21) }))" />
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudNumericField T="int" Label="Sets (First to)" Min="1" Max="13" Value="@_settings.SetsToWin" ValueChanged="@(v => Update(s => s with { SetsToWin = Math.Clamp(v, 1, 13) }))"
+                                             HelperText="1 = ohne Sets" />
+                        </MudItem>
+                    </MudGrid>
+                    break;
+
+                case GameMode.Cricket:
+                    <MudSwitch T="bool" Value="@_settings.CutThroat" ValueChanged="@(v => Update(s => s with { CutThroat = v }))" Color="Color.Primary" Label="Cut Throat (Punkte gehen an die Gegner)" />
+                    <MudNumericField T="int" Label="Rundenlimit" Min="0" Max="99" Value="@_settings.Rounds" ValueChanged="@(v => Update(s => s with { Rounds = Math.Clamp(v, 0, 99) }))" HelperText="0 = unbegrenzt" />
+                    break;
+
+                case GameMode.AroundTheClock:
+                    <MudSelect T="AroundTheClockHit" Label="Gültige Treffer" Value="@_settings.ClockHit" ValueChanged="@(v => Update(s => s with { ClockHit = v }))">
+                        <MudSelectItem Value="AroundTheClockHit.Any">Alle Felder (Single, Double, Triple)</MudSelectItem>
+                        <MudSelectItem Value="AroundTheClockHit.DoubleOnly">Nur Doppel</MudSelectItem>
+                        <MudSelectItem Value="AroundTheClockHit.TripleOnly">Nur Triple</MudSelectItem>
+                    </MudSelect>
+                    <MudSwitch T="bool" Value="@_settings.ClockIncludeBull" ValueChanged="@(v => Update(s => s with { ClockIncludeBull = v }))" Color="Color.Primary" Label="Bull zum Abschluss" Class="mt-2" />
+                    @if (_settings.ClockHit == AroundTheClockHit.Any)
+                    {
+                        <MudSwitch T="bool" Value="@_settings.ClockMultiplierSkips" ValueChanged="@(v => Update(s => s with { ClockMultiplierSkips = v }))" Color="Color.Primary" Label="Double/Triple überspringt Zahlen" />
+                    }
+                    break;
+
+                case GameMode.Shanghai:
+                    <MudNumericField T="int" Label="Runden" Min="1" Max="20" Value="@_settings.Rounds" ValueChanged="@(v => Update(s => s with { Rounds = Math.Clamp(v, 1, 20) }))" HelperText="Klassisch 7, lang 20" />
+                    break;
+
+                case GameMode.Bobs27:
+                    <MudSwitch T="bool" Value="@_settings.Bobs27Elimination" ValueChanged="@(v => Update(s => s with { Bobs27Elimination = v }))" Color="Color.Primary" Label="Ausscheiden bei 0 Punkten oder weniger" />
+                    break;
+
+                case GameMode.Checkout121:
+                    <MudGrid Spacing="2">
+                        <MudItem xs="6">
+                            <MudNumericField T="int" Label="Startwert" Min="2" Max="170" Value="@_settings.CheckoutStart" ValueChanged="@(v => Update(s => s with { CheckoutStart = Math.Clamp(v, 2, 170) }))" />
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudNumericField T="int" Label="Versuche" Min="1" Max="100" Value="@_settings.CheckoutAttempts" ValueChanged="@(v => Update(s => s with { CheckoutAttempts = Math.Clamp(v, 1, 100) }))" />
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudNumericField T="int" Label="Aufnahmen pro Versuch" Min="1" Max="10" Value="@_settings.CheckoutTurnsPerAttempt" ValueChanged="@(v => Update(s => s with { CheckoutTurnsPerAttempt = Math.Clamp(v, 1, 10) }))"
+                                             HelperText="@($"= {_settings.CheckoutTurnsPerAttempt * 3} Darts")" />
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudSelect T="InOutRule" Label="Ausstieg" Value="@_settings.OutRule" ValueChanged="@(v => Update(s => s with { OutRule = v }))">
+                                <MudSelectItem Value="InOutRule.Double">Double Out</MudSelectItem>
+                                <MudSelectItem Value="InOutRule.Master">Master Out</MudSelectItem>
+                                <MudSelectItem Value="InOutRule.Single">Single Out</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudSelect T="CheckoutFailRule" Label="Bei verpasstem Checkout" Value="@_settings.CheckoutOnFail" ValueChanged="@(v => Update(s => s with { CheckoutOnFail = v }))">
+                                <MudSelectItem Value="CheckoutFailRule.Stay">Ziel bleibt gleich</MudSelectItem>
+                                <MudSelectItem Value="CheckoutFailRule.MinusOne">Ziel sinkt um 1</MudSelectItem>
+                                <MudSelectItem Value="CheckoutFailRule.Reset">Zurück auf Startwert</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                    </MudGrid>
+                    break;
+
+                case GameMode.HighScore:
+                    <MudNumericField T="int" Label="Runden" Min="1" Max="50" Value="@_settings.Rounds" ValueChanged="@(v => Update(s => s with { Rounds = Math.Clamp(v, 1, 50) }))" />
+                    break;
+
+                case GameMode.Killer:
+                    <MudNumericField T="int" Label="Leben" Min="1" Max="9" Value="@_settings.KillerLives" ValueChanged="@(v => Update(s => s with { KillerLives = Math.Clamp(v, 1, 9) }))"
+                                     HelperText="Die Zahlen werden beim Start zufällig verteilt." />
+                    break;
+
+                case GameMode.HalveIt:
+                    <MudText Typo="Typo.body2">Ziele: 15 · 16 · Doppel · 17 · 18 · Triple · 19 · 20 · Bull. Start mit @HalveItEngine.StartPoints Punkten.</MudText>
+                    break;
+
+                case GameMode.Baseball:
+                    <MudNumericField T="int" Label="Innings" Min="1" Max="20" Value="@_settings.Rounds" ValueChanged="@(v => Update(s => s with { Rounds = Math.Clamp(v, 1, 20) }))" HelperText="Klassisch 9" />
+                    break;
+
+                case GameMode.Gotcha:
+                    <MudNumericField T="int" Label="Zielpunktzahl" Min="50" Max="1001" Value="@_settings.GotchaTarget" ValueChanged="@(v => Update(s => s with { GotchaTarget = Math.Clamp(v, 50, 1001) }))" />
+                    break;
+            }
+
+            <MudText Typo="Typo.caption" Class="mud-text-secondary mt-3 d-block">@_settings.Describe()</MudText>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4" Elevation="1">
+            <div class="d-flex align-center">
+                <MudText Typo="Typo.h6">Spieler (@_selected.Count)</MudText>
+                <MudSpacer />
+                <MudTooltip Text="Reihenfolge zufällig">
+                    <MudIconButton Icon="@Icons.Material.Filled.Shuffle" Disabled="@(_selected.Count < 2)" OnClick="Shuffle" />
+                </MudTooltip>
+            </div>
+
+            @if (_selected.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Class="mud-text-secondary my-2">Wähle unten Spieler aus oder füge einen Gast hinzu.</MudText>
+            }
+            else
+            {
+                <MudList T="PlayerRef" Dense="true" Class="py-0">
+                    @for (var i = 0; i < _selected.Count; i++)
+                    {
+                        var index = i;
+                        var player = _selected[i];
+                        <MudListItem T="PlayerRef">
+                            <div class="d-flex align-center">
+                                <MudAvatar Size="Size.Small" Color="@(index == 0 ? Color.Primary : Color.Default)" Class="mr-3">@(index + 1)</MudAvatar>
+                                @if (player.Bot is { } bot)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.SmartToy" Size="Size.Small" Color="Color.Secondary" Class="mr-1" />
+                                    <MudText>@player.Name</MudText>
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Class="ml-1">~@bot.ApproxAverage() Ø</MudChip>
+                                }
+                                else
+                                {
+                                    <MudText>@player.Name @(player.Id is null ? "(Gast)" : "")</MudText>
+                                }
+                                <MudSpacer />
+                                <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowUp" Size="Size.Small" Disabled="@(index == 0)" OnClick="() => Move(index, -1)" />
+                                <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowDown" Size="Size.Small" Disabled="@(index == _selected.Count - 1)" OnClick="() => Move(index, 1)" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="() => _selected.RemoveAt(index)" />
+                            </div>
+                        </MudListItem>
+                    }
+                </MudList>
+            }
+
+            <MudDivider Class="my-3" />
+
+            @if (_available.Count > 0)
+            {
+                <MudText Typo="Typo.subtitle2">Spielerliste</MudText>
+                <div class="d-flex flex-wrap gap-1 mb-2">
+                    @foreach (var player in _available)
+                    {
+                        var isSelected = _selected.Any(s => s.Id == player.Id);
+                        <MudChip T="string" Color="@(isSelected ? Color.Primary : Color.Default)" Variant="@(isSelected ? Variant.Filled : Variant.Outlined)"
+                                 Icon="@(player.IsSelf ? Icons.Material.Filled.Person : null)" OnClick="() => TogglePlayer(player)">@player.Name</MudChip>
+                    }
+                </div>
+            }
+
+            <div class="d-flex align-center gap-2">
+                <MudTextField @bind-Value="_guestName" Label="Name hinzufügen" MaxLength="40" Immediate="true"
+                              OnKeyDown="@(e => e.Key == "Enter" ? AddGuestAsync() : Task.CompletedTask)" />
+                <MudButton Variant="Variant.Outlined" OnClick="AddGuestAsync" Disabled="@string.IsNullOrWhiteSpace(_guestName)">Hinzufügen</MudButton>
+            </div>
+            <MudCheckBox T="bool" @bind-Value="_saveGuest" Label="In Spielerliste speichern" Dense="true" Size="Size.Small" />
+
+            <MudDivider Class="my-3" />
+            <MudText Typo="Typo.subtitle2">Computergegner</MudText>
+            <div class="d-flex align-center gap-2">
+                <MudSelect T="BotLevel" @bind-Value="_botLevel" Label="Schwierigkeit" Margin="Margin.Dense">
+                    @foreach (var level in BotLevels.All)
+                    {
+                        <MudSelectItem T="BotLevel" Value="@level">@level.Name() (Ø ~@level.ApproxAverage())</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.SmartToy" OnClick="AddBot">Hinzufügen</MudButton>
+            </div>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">Ø = ungefährer 3-Dart-Average in X01. Der Computer spielt in jedem Modus mit passender Taktik.</MudText>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" Class="d-flex justify-end gap-2">
+        @if (_selected.Count < ModeInfo.MinPlayers)
+        {
+            <MudText Typo="Typo.body2" Class="mud-text-secondary align-self-center">@ModeInfo.Name braucht mindestens @ModeInfo.MinPlayers Spieler – füge Mitspieler oder Computergegner hinzu.</MudText>
+        }
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" StartIcon="@Icons.Material.Filled.PlayArrow"
+                   Disabled="@(_selected.Count < ModeInfo.MinPlayers)" OnClick="StartAsync">Spiel starten</MudButton>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private const string LastSetupKey = "darts.lastSetup";
+
+    private sealed class LastSetup
+    {
+        public Dictionary<GameMode, GameSettings> Settings { get; set; } = new();
+        public GameMode Mode { get; set; }
+        public List<PlayerRef> Players { get; set; } = [];
+    }
+
+    [Parameter] public string? ModeName { get; set; }
+
+    private LastSetup _last = new();
+    private GameSettings _settings = GameSettings.DefaultFor(GameMode.X01);
+    private List<PlayerRef> _selected = [];
+    private IReadOnlyList<Player> _available = [];
+    private string _guestName = "";
+    private bool _saveGuest = true;
+    private BotLevel _botLevel = BotLevel.Intermediate;
+
+    private GameModeInfo ModeInfo => GameModes.Get(_settings.Mode);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _last = await Store.GetAsync<LastSetup>(LastSetupKey) ?? new LastSetup();
+
+        try
+        {
+            _available = await Data.GetPlayersAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Spieler konnten nicht geladen werden: {ex.Message}", Severity.Warning);
+        }
+
+        // Zuletzt verwendete Spieler, sofern noch vorhanden; sonst der Benutzer selbst.
+        _selected = _last.Players
+            .Where(p => p.Id is null || _available.Any(a => a.Id == p.Id))
+            .Select(p => p.Id is { } id ? new PlayerRef(id, _available.First(a => a.Id == id).Name) : p)
+            .ToList();
+        if (_selected.Count == 0 && _available.FirstOrDefault(p => p.IsSelf) is { } self)
+            _selected.Add(new PlayerRef(self.Id, self.Name));
+
+        SelectMode(Enum.TryParse<GameMode>(ModeName, true, out var mode) ? mode : _last.Mode);
+    }
+
+    private void SelectMode(GameMode mode) =>
+        _settings = _last.Settings.TryGetValue(mode, out var s) ? s with { Mode = mode } : GameSettings.DefaultFor(mode);
+
+    private void Update(Func<GameSettings, GameSettings> change) => _settings = change(_settings);
+
+    private void TogglePlayer(Player player)
+    {
+        var existing = _selected.FindIndex(s => s.Id == player.Id);
+        if (existing >= 0)
+            _selected.RemoveAt(existing);
+        else if (_selected.Count < GameEngine.MaxPlayers)
+            _selected.Add(new PlayerRef(player.Id, player.Name));
+        else
+            Snackbar.Add($"Maximal {GameEngine.MaxPlayers} Spieler", Severity.Warning);
+    }
+
+    private async Task AddGuestAsync()
+    {
+        var name = _guestName.Trim();
+        if (name.Length == 0) return;
+        if (_selected.Count >= GameEngine.MaxPlayers)
+        {
+            Snackbar.Add($"Maximal {GameEngine.MaxPlayers} Spieler", Severity.Warning);
+            return;
+        }
+
+        if (_saveGuest)
+        {
+            try
+            {
+                var existing = _available.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+                var player = existing ?? await Data.AddPlayerAsync(name);
+                _available = await Data.GetPlayersAsync();
+                if (_selected.All(s => s.Id != player.Id)) _selected.Add(new PlayerRef(player.Id, player.Name));
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Spieler konnte nicht gespeichert werden: {ex.Message}", Severity.Error);
+                _selected.Add(new PlayerRef(null, name));
+            }
+        }
+        else
+        {
+            _selected.Add(new PlayerRef(null, name));
+        }
+
+        _guestName = "";
+    }
+
+    private void AddBot()
+    {
+        if (_selected.Count >= GameEngine.MaxPlayers)
+        {
+            Snackbar.Add($"Maximal {GameEngine.MaxPlayers} Spieler", Severity.Warning);
+            return;
+        }
+
+        var baseName = $"Computer ({_botLevel.Name()})";
+        var name = baseName;
+        for (var i = 2; _selected.Any(p => p.Name == name); i++) name = $"{baseName} {i}";
+        _selected.Add(new PlayerRef(null, name, _botLevel));
+    }
+
+    private void Move(int index, int delta)
+    {
+        var target = index + delta;
+        if (target < 0 || target >= _selected.Count) return;
+        (_selected[index], _selected[target]) = (_selected[target], _selected[index]);
+    }
+
+    private void Shuffle() => _selected = _selected.OrderBy(_ => Random.Shared.Next()).ToList();
+
+    private async Task StartAsync()
+    {
+        if (_selected.Count < ModeInfo.MinPlayers) return;
+
+        if (Session.HasActiveGame)
+        {
+            var confirm = await DialogService.ShowMessageBoxAsync("Laufendes Spiel",
+                "Es läuft noch ein Spiel. Soll es verworfen und ein neues gestartet werden?", yesText: "Neues Spiel", cancelText: "Abbrechen");
+            if (confirm != true) return;
+        }
+
+        try
+        {
+            await Session.StartAsync(_settings, _selected);
+        }
+        catch (ArgumentException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+            return;
+        }
+
+        _last.Mode = _settings.Mode;
+        _last.Settings[_settings.Mode] = _settings;
+        _last.Players = _selected.ToList();
+        await Store.SetAsync(LastSetupKey, _last);
+
+        Navigation.NavigateTo("play");
+    }
+}

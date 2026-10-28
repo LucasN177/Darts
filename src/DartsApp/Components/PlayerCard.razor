@@ -1,0 +1,41 @@
+<MudPaper Class="@($"player-card pa-3 {(View.IsActive ? "active" : "")} {(View.IsOut ? "out" : "")}")" Elevation="@(View.IsActive ? 6 : 1)">
+    <div class="d-flex align-center justify-space-between">
+        <MudText Typo="Typo.subtitle1" Class="player-name">
+            @if (View.IsActive)
+            {
+                <MudIcon Icon="@Icons.Material.Filled.PlayArrow" Size="Size.Small" Color="Color.Primary" Class="mr-1" Style="vertical-align:middle" />
+            }
+            @View.Name
+            @if (IsBot)
+            {
+                <MudIcon Icon="@Icons.Material.Filled.SmartToy" Size="Size.Small" Color="Color.Secondary" Class="ml-1" Style="vertical-align:middle" />
+            }
+        </MudText>
+        @if (IsWinner)
+        {
+            <MudChip T="string" Size="Size.Small" Color="Color.Tertiary" Icon="@Icons.Material.Filled.EmojiEvents">Sieg</MudChip>
+        }
+        else if (View.IsOut)
+        {
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">raus</MudChip>
+        }
+    </div>
+    <div class="player-primary">@View.Primary</div>
+    <MudText Typo="Typo.caption" Class="mud-text-secondary">@View.PrimaryLabel</MudText>
+    <div class="player-details mt-1">
+        @foreach (var d in View.Details)
+        {
+            <span><span class="mud-text-secondary">@d.Key</span> <b>@d.Value</b></span>
+        }
+    </div>
+    @if (!string.IsNullOrEmpty(View.Badge))
+    {
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1 d-block">@View.Badge</MudText>
+    }
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired] public PlayerView View { get; set; } = default!;
+    [Parameter] public bool IsWinner { get; set; }
+    [Parameter] public bool IsBot { get; set; }
+}

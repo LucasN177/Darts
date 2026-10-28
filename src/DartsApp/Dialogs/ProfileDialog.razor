@@ -1,0 +1,96 @@
+@inject AuthService Auth
+@inject DataService Data
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        @if (_loading)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@Auth.User?.Email</MudText>
+            <MudTextField @bind-Value="_profile.DisplayName" Label="Anzeigename" MaxLength="40" HelperText="So heißt du in Spielen und Statistiken." />
+            <MudTextField @bind-Value="_profile.FirstName" Label="Vorname" />
+            <MudTextField @bind-Value="_profile.LastName" Label="Nachname" />
+
+            <MudDivider Class="my-4" />
+            <MudText Typo="Typo.subtitle2">Passwort ändern</MudText>
+            <MudTextField @bind-Value="_newPassword" Label="Neues Passwort" InputType="InputType.Password" HelperText="Leer lassen, um es nicht zu ändern." />
+        }
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3">@_error</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())">Abbrechen</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(_busy || _loading)" OnClick="SaveAsync">Speichern</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private DbProfile _profile = new();
+    private string _newPassword = "";
+    private bool _loading = true;
+    private bool _busy;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Auth.User is not { } user) return;
+        try
+        {
+            _profile = await Data.Remote.GetProfileAsync(user.Id)
+                       ?? new DbProfile { Id = user.Id, DisplayName = user.MetadataString("display_name") ?? "" };
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+            _profile = new DbProfile { Id = user.Id };
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_profile.DisplayName))
+        {
+            _error = "Bitte einen Anzeigenamen angeben.";
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        try
+        {
+            _profile.DisplayName = _profile.DisplayName.Trim();
+            // Leere Felder als "" senden: null-Werte werden beim Serialisieren weggelassen und würden den alten Wert behalten.
+            _profile.FirstName = _profile.FirstName?.Trim() ?? "";
+            _profile.LastName = _profile.LastName?.Trim() ?? "";
+            await Data.Remote.SaveProfileAsync(_profile);
+            await Auth.UpdateMetadataAsync(new { display_name = _profile.DisplayName });
+            if (!string.IsNullOrEmpty(_newPassword))
+            {
+                if (_newPassword.Length < 6) throw new InvalidOperationException("Das Passwort muss mindestens 6 Zeichen haben.");
+                await Auth.UpdatePasswordAsync(_newPassword);
+            }
+            Snackbar.Add("Profil gespeichert", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}
