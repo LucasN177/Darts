@@ -43,16 +43,6 @@ publish.ps1               Test + Build für GitHub Pages (nach ./site)
 Alle Spielmodi erben von `GameEngine`. Ein Spiel ist vollständig durch Einstellungen, Spieler und die Liste der
 geworfenen Darts beschrieben – Undo und das Wiederherstellen gespeicherter Spiele spielen diese Liste einfach neu ab.
 
-## Einrichtung Supabase
-
-1. Im Supabase-Dashboard unter **SQL Editor** die Skripte aus [`database/`](database/README.md) in der Reihenfolge
-   `00` bis `04` ausführen (oder per psql mit `install_all.psql`). Alle Tabellen haben das Präfix `darts_` und sind
-   per Row Level Security auf den jeweiligen Benutzer beschränkt.
-2. Unter **Authentication → URL Configuration** die Site-URL (z.B. `https://<user>.github.io/Darts/`) und
-   `http://localhost:5211/` als Redirect-URL eintragen, damit Bestätigungs- und Passwort-Reset-Links funktionieren.
-3. URL und Publishable Key stehen in [`src/DartsApp/wwwroot/appsettings.json`](src/DartsApp/wwwroot/appsettings.json).
-   Der Publishable Key ist für den Browser gedacht; der Datenschutz erfolgt über die RLS-Policies.
-
 ## Entwicklung
 
 ```bash
