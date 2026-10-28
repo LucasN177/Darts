@@ -99,7 +99,7 @@ else
         get
         {
             var name = Auth.User?.MetadataString("display_name");
-            return string.IsNullOrWhiteSpace(name) ? "Game on! 🎯" : $"Game on, {name}! 🎯";
+            return string.IsNullOrWhiteSpace(name) ? "Game on!" : $"Game on, {name}!";
         }
     }
 
