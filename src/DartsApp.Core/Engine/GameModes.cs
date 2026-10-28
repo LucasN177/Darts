@@ -20,7 +20,7 @@ public static class GameModes
             "eigenes geschlossenes Feld bringen Punkte, solange ein Gegner es noch offen hat. Gewonnen hat, wer alle Felder " +
             "geschlossen hat und mindestens so viele Punkte wie alle anderen hat. Bei Cut Throat gehen die Punkte an die " +
             "Gegner – hier gewinnt die niedrigste Punktzahl."),
-        new(GameMode.AroundTheClock, "Around the Clock", "1 → 20 → Bull",
+        new(GameMode.AroundTheClock, "Around the Clock", "1 bis 20 und Bull",
             "Alle Zahlen der Reihe nach treffen – ideal zum Aufwärmen.",
             "Jeder Spieler beginnt bei der 1 und muss die Zahlen der Reihe nach treffen, optional zum Schluss das Bull. " +
             "Varianten: nur Doppel oder nur Triple zählen, oder Double/Triple überspringen entsprechend viele Zahlen. " +

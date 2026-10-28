@@ -82,6 +82,15 @@ html, body {
 .text-right { text-align: right; }
 .table-scroll { overflow-x: auto; }
 
+/* ---------- Navigation ---------- */
+.nav-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+.nav-footer { margin-top: auto; }
+
 /* ---------- Startseite / Modusauswahl ---------- */
 .hero {
     background: linear-gradient(135deg, rgba(239, 83, 80, .18), rgba(102, 187, 106, .12));
@@ -129,6 +138,9 @@ html, body {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+.player-symbol { font-size: 2.4rem !important; vertical-align: middle; }
+.player-lives { display: inline-flex; flex-wrap: wrap; gap: 2px; }
 
 .player-primary {
     font-size: 2.8rem;
@@ -227,7 +239,10 @@ html, body {
 /* ---------- Cricket ---------- */
 .cricket-board th, .cricket-board td { text-align: center !important; }
 .cricket-board .target-col { text-align: left !important; width: 70px; }
-.cricket-board .marks { font-size: 1.4rem; font-weight: 700; }
+.cricket-board .marks { height: 40px; }
+.cricket-board .mark-icon { font-size: 1.7rem; vertical-align: middle; }
+/* Ein Mark als Schrägstrich: waagrechter Strich, gedreht */
+.cricket-board .mark-one { transform: rotate(-60deg); }
 .cricket-board .active { background: rgba(239, 83, 80, .12); }
 .cricket-board tr.closed td { opacity: .4; }
 .cricket-board .points-row td { font-size: 1.1rem; }
@@ -256,5 +271,6 @@ html, body {
     .player-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
     .player-primary { font-size: 2.1rem; }
     .pad-btn { min-height: 48px; font-size: 1.05rem; }
-    .cricket-board .marks { font-size: 1.15rem; }
+    .cricket-board .mark-icon { font-size: 1.4rem; }
+    .player-symbol { font-size: 1.9rem !important; }
 }

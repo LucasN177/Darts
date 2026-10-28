@@ -167,7 +167,7 @@ else
         // Die letzte Aufnahme ist nur dann abgeschlossen, wenn dieser Dart sie beendet hat.
         if (Engine is { Settings.Mode: GameMode.X01 or GameMode.HighScore } e && e.Turns.Count > 0
             && e.Turns[^1] is { IsComplete: true, Bust: false, Score: 180 })
-            Snackbar.Add("🎯 180!", Severity.Success);
+            Snackbar.Add("180!", Severity.Success);
     }
 
     private async Task RematchAsync()

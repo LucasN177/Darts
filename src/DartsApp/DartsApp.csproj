@@ -6,6 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
     <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
+    <!-- Wird unten in der Navigation angezeigt (Version 1 war der alte Build). -->
+    <Version>2.0.0</Version>
     <!-- Modelle werden per Reflection (System.Text.Json) serialisiert: nur als trimmbar markierte Assemblies kürzen. -->
     <TrimMode>partial</TrimMode>
     <!-- Die App ist deutschsprachig: immer die ICU-Daten für europäische Sprachen laden. -->

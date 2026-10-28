@@ -82,7 +82,13 @@
                         @r.Rank
                     }
                 </td>
-                <td>@r.Name@(r.Extra.ContainsKey("bot") ? " 🤖" : "")</td>
+                <td>
+                    @r.Name
+                    @if (r.Extra.ContainsKey("bot"))
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.SmartToy" Size="Size.Small" Color="Color.Secondary" Style="vertical-align:middle" Title="Computergegner" />
+                    }
+                </td>
                 @switch (Mode)
                 {
                     case GameMode.X01:

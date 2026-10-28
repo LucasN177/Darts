@@ -84,11 +84,12 @@ public sealed class AroundTheClockEngine : GameEngine
     {
         var target = TargetOf(player);
         return new PlayerView(Players[player].Name,
-            target is null ? "✓" : target == Dart.BullSegment ? "Bull" : target.Value.ToString(), "Ziel",
+            target is null ? "Fertig" : target == Dart.BullSegment ? "Bull" : target.Value.ToString(), "Ziel",
             Details(("Fortschritt", $"{_targetIndex[player]}/{_targets.Length}"),
                 ("Trefferquote", $"{HitRate(player):P0}"),
                 ("Darts", TurnsOf(player).Sum(t => t.Darts.Count).ToString())),
-            IsActive: !IsFinished && player == CurrentPlayer);
+            IsActive: !IsFinished && player == CurrentPlayer,
+            Symbol: target is null ? PlayerSymbol.Finished : PlayerSymbol.None);
     }
 
     public override IReadOnlyList<PlayerResult> GetResults()
