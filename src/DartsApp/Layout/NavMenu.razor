@@ -1,25 +1,47 @@
+@using System.Reflection
 @implements IDisposable
 @inject GameSession Session
 @inject DataService Data
 
-<MudNavMenu Class="pt-2">
-    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Start</MudNavLink>
-    @if (Session.HasActiveGame)
-    {
-        <MudNavLink Href="play" Icon="@Icons.Material.Filled.PlayCircle" IconColor="Color.Primary">Laufendes Spiel</MudNavLink>
-    }
-    <MudNavLink Href="new" Icon="@Icons.Material.Filled.AddCircle">Neues Spiel</MudNavLink>
-    <MudNavLink Href="history" Icon="@Icons.Material.Filled.History">Verlauf</MudNavLink>
-    <MudNavLink Href="stats" Icon="@Icons.Material.Filled.Insights">Statistik</MudNavLink>
-    <MudNavLink Href="players" Icon="@Icons.Material.Filled.Groups">Spieler</MudNavLink>
-    <MudNavLink Href="rules" Icon="@Icons.Material.Filled.MenuBook">Spielmodi &amp; Regeln</MudNavLink>
-</MudNavMenu>
+<div class="nav-wrapper">
+    <MudNavMenu Class="pt-2">
+        <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Start</MudNavLink>
+        @if (Session.HasActiveGame)
+        {
+            <MudNavLink Href="play" Icon="@Icons.Material.Filled.PlayCircle" IconColor="Color.Primary">Laufendes Spiel</MudNavLink>
+        }
+        <MudNavLink Href="new" Icon="@Icons.Material.Filled.AddCircle">Neues Spiel</MudNavLink>
+        <MudNavLink Href="history" Icon="@Icons.Material.Filled.History">Verlauf</MudNavLink>
+        <MudNavLink Href="stats" Icon="@Icons.Material.Filled.Insights">Statistik</MudNavLink>
+        <MudNavLink Href="players" Icon="@Icons.Material.Filled.Groups">Spieler</MudNavLink>
+        <MudNavLink Href="rules" Icon="@Icons.Material.Filled.MenuBook">Spielmodi &amp; Regeln</MudNavLink>
+    </MudNavMenu>
 
-<MudText Typo="Typo.caption" Class="px-4 pt-4 mud-text-secondary d-block">
-    @(Data.IsCloud ? "Daten werden in deinem Konto gespeichert." : "Ohne Anmeldung werden Spiele nur in diesem Browser gespeichert.")
-</MudText>
+    <MudText Typo="Typo.caption" Class="px-4 pt-4 mud-text-secondary d-block">
+        @(Data.IsCloud ? "Daten werden in deinem Konto gespeichert." : "Ohne Anmeldung werden Spiele nur in diesem Browser gespeichert.")
+    </MudText>
+
+    <div class="nav-footer px-4 py-3">
+        <MudDivider Class="mb-2" />
+        <MudText Typo="Typo.caption" Class="mud-text-secondary d-block" title="@InformationalVersion">Version @Version</MudText>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">by Lucas Nagelsmann</MudText>
+    </div>
+</div>
 
 @code {
+    // InformationalVersion enthält beim Build aus Git den Commit, z.B. "2.0.0+fe96620a…".
+    private static readonly string InformationalVersion =
+        typeof(App).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "";
+
+    private static readonly string Version = FormatVersion(InformationalVersion);
+
+    private static string FormatVersion(string informational)
+    {
+        if (string.IsNullOrEmpty(informational)) return "–";
+        var parts = informational.Split('+', 2);
+        return parts.Length == 2 && parts[1].Length >= 7 ? $"{parts[0]} ({parts[1][..7]})" : parts[0];
+    }
+
     protected override void OnInitialized()
     {
         Session.Changed += OnChanged;
