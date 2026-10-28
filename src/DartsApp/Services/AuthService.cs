@@ -273,7 +273,7 @@ public sealed class AuthService(HttpClient http, SupabaseConfig config, LocalSto
             }
 
             if (doc.RootElement.TryGetProperty("code", out var code) && code.ValueKind == JsonValueKind.String && code.GetString() == "PGRST205")
-                message = "Die Darts-Tabellen fehlen in Supabase. Bitte supabase/schema.sql im SQL Editor ausführen.";
+                message = "Die Darts-Tabellen fehlen in Supabase. Bitte die Skripte aus dem Ordner database/ im SQL Editor ausführen.";
         }
         catch (JsonException)
         {

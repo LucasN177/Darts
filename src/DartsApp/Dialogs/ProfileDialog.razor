@@ -71,6 +71,9 @@
         try
         {
             _profile.DisplayName = _profile.DisplayName.Trim();
+            // Leere Felder als "" senden: null-Werte werden beim Serialisieren weggelassen und würden den alten Wert behalten.
+            _profile.FirstName = _profile.FirstName?.Trim() ?? "";
+            _profile.LastName = _profile.LastName?.Trim() ?? "";
             await Data.Remote.SaveProfileAsync(_profile);
             await Auth.UpdateMetadataAsync(new { display_name = _profile.DisplayName });
             if (!string.IsNullOrEmpty(_newPassword))

@@ -1,0 +1,7 @@
+-- Führt alle Skripte in der richtigen Reihenfolge aus – nur mit psql, nicht im Supabase SQL Editor:
+--   psql "<Connection String>" -v ON_ERROR_STOP=1 -f database/install_all.psql
+\ir 00_functions.sql
+\ir 01_darts_profiles.sql
+\ir 02_darts_players.sql
+\ir 03_darts_games.sql
+\ir 04_darts_game_players.sql

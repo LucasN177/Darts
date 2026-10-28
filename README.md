@@ -25,7 +25,7 @@ Neuladen, Verlauf mit Aufnahme-Details, Statistik pro Spieler und Modus (Average
 src/DartsApp.Core/        Spiellogik (Engines je Modus, Checkout-Rechner, Statistik) – ohne UI-Abhängigkeiten
 src/DartsApp/             Blazor-WASM-App (MudBlazor), Supabase-Anbindung über REST (Auth + PostgREST)
 tests/DartsApp.Core.Tests Unit-Tests der Spiellogik
-supabase/schema.sql       Datenbankschema inkl. Row Level Security
+database/                 SQL-Skripte aller Tabellen inkl. Row Level Security (je Tabelle ein Skript)
 publish.ps1               Test + Build für GitHub Pages (nach ./site)
 .github/workflows/        Build & Deploy per GitHub Actions
 ```
@@ -35,8 +35,9 @@ geworfenen Darts beschrieben – Undo und das Wiederherstellen gespeicherter Spi
 
 ## Einrichtung Supabase
 
-1. Im Supabase-Dashboard unter **SQL Editor** den Inhalt von [`supabase/schema.sql`](supabase/schema.sql) ausführen.
-   Alle Tabellen haben das Präfix `darts_` und sind per Row Level Security auf den jeweiligen Benutzer beschränkt.
+1. Im Supabase-Dashboard unter **SQL Editor** die Skripte aus [`database/`](database/README.md) in der Reihenfolge
+   `00` bis `04` ausführen (oder per psql mit `install_all.psql`). Alle Tabellen haben das Präfix `darts_` und sind
+   per Row Level Security auf den jeweiligen Benutzer beschränkt.
 2. Unter **Authentication → URL Configuration** die Site-URL (z.B. `https://<user>.github.io/Darts/`) und
    `http://localhost:5211/` als Redirect-URL eintragen, damit Bestätigungs- und Passwort-Reset-Links funktionieren.
 3. URL und Publishable Key stehen in [`src/DartsApp/wwwroot/appsettings.json`](src/DartsApp/wwwroot/appsettings.json).
