@@ -20,7 +20,28 @@
             <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">raus</MudChip>
         }
     </div>
-    <div class="player-primary">@View.Primary</div>
+    <div class="player-primary" title="@View.Primary">
+        @switch (View.Symbol)
+        {
+            case PlayerSymbol.Finished:
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Class="player-symbol" aria-label="@View.Primary" />
+                break;
+            case PlayerSymbol.Eliminated:
+                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Default" Class="player-symbol" aria-label="@View.Primary" />
+                break;
+            case PlayerSymbol.Lives:
+                <span class="player-lives" aria-label="@View.Primary">
+                    @for (var i = 0; i < View.SymbolCount; i++)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Favorite" Color="Color.Error" Class="player-symbol" />
+                    }
+                </span>
+                break;
+            default:
+                @View.Primary
+                break;
+        }
+    </div>
     <MudText Typo="Typo.caption" Class="mud-text-secondary">@View.PrimaryLabel</MudText>
     <div class="player-details mt-1">
         @foreach (var d in View.Details)

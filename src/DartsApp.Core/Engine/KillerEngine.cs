@@ -132,11 +132,13 @@ public sealed class KillerEngine : GameEngine
     }
 
     public override PlayerView GetView(int player) =>
-        new(Players[player].Name, IsAlive(player) ? new string('♥', _lives[player]) : "✕", $"Zahl {_numbers[player]}",
+        new(Players[player].Name, IsAlive(player) ? $"{_lives[player]} Leben" : "Ausgeschieden", $"Zahl {_numbers[player]}",
             Details(("Leben", _lives[player].ToString()), ("Kills", _kills[player].ToString())),
             IsActive: !IsFinished && player == CurrentPlayer,
             IsOut: !IsAlive(player),
-            Badge: _killer[player] && IsAlive(player) ? "Killer" : null);
+            Badge: _killer[player] && IsAlive(player) ? "Killer" : null,
+            Symbol: IsAlive(player) ? PlayerSymbol.Lives : PlayerSymbol.Eliminated,
+            SymbolCount: Math.Max(0, _lives[player]));
 
     public override IReadOnlyList<PlayerResult> GetResults()
     {

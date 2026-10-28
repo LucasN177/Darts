@@ -35,7 +35,25 @@ public sealed class Turn
     public bool IsComplete { get; set; }
 }
 
-/// <summary>Anzeige-Daten eines Spielers für die Spielansicht.</summary>
+/// <summary>
+/// Symbol, das die Oberfläche statt des Hauptwerts als Icon darstellt. Die Spiellogik kennt keine
+/// UI-Bibliothek; sie sagt nur, was gezeigt werden soll.
+/// </summary>
+public enum PlayerSymbol
+{
+    None,
+    /// <summary>Alle Ziele erledigt.</summary>
+    Finished,
+    /// <summary>Verbleibende Leben, Anzahl in <see cref="PlayerView.SymbolCount"/>.</summary>
+    Lives,
+    /// <summary>Ausgeschieden.</summary>
+    Eliminated
+}
+
+/// <summary>
+/// Anzeige-Daten eines Spielers für die Spielansicht. Ist <paramref name="Symbol"/> gesetzt, zeigt die
+/// Oberfläche ein Icon; <paramref name="Primary"/> bleibt als Text (z.B. für Screenreader) erhalten.
+/// </summary>
 public sealed record PlayerView(
     string Name,
     string Primary,
@@ -43,7 +61,9 @@ public sealed record PlayerView(
     IReadOnlyList<KeyValuePair<string, string>> Details,
     bool IsActive,
     bool IsOut = false,
-    string? Badge = null);
+    string? Badge = null,
+    PlayerSymbol Symbol = PlayerSymbol.None,
+    int SymbolCount = 0);
 
 /// <summary>Ergebnis eines Spielers am Ende eines Spiels (wird gespeichert).</summary>
 public sealed class PlayerResult

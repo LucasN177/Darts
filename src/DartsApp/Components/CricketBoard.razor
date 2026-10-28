@@ -18,7 +18,23 @@
                 <td class="target-col"><b>@(target == Dart.BullSegment ? "Bull" : target)</b></td>
                 @for (var p = 0; p < Engine.PlayerCount; p++)
                 {
-                    <td class="marks @(p == Engine.CurrentPlayer && !Engine.IsFinished ? "active" : "")">@Marks(Engine.MarksOf(p, target))</td>
+                    var marks = Engine.MarksOf(p, target);
+                    <td class="marks @(p == Engine.CurrentPlayer && !Engine.IsFinished ? "active" : "")" title="@($"{Math.Min(marks, 3)} von 3")">
+                        @switch (marks)
+                        {
+                            case 0:
+                                break;
+                            case 1:
+                                <MudIcon Icon="@Icons.Material.Filled.Remove" Class="mark-icon mark-one" />
+                                break;
+                            case 2:
+                                <MudIcon Icon="@Icons.Material.Filled.Close" Class="mark-icon" />
+                                break;
+                            default:
+                                <MudIcon Icon="@Icons.Material.Filled.HighlightOff" Color="Color.Success" Class="mark-icon" />
+                                break;
+                        }
+                    </td>
                 }
             </tr>
         }
@@ -34,12 +50,4 @@
 
 @code {
     [Parameter, EditorRequired] public CricketEngine Engine { get; set; } = default!;
-
-    private static string Marks(int marks) => marks switch
-    {
-        0 => "",
-        1 => "/",
-        2 => "X",
-        _ => "Ⓧ"
-    };
 }
