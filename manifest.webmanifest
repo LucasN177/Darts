@@ -1,22 +1,15 @@
 {
-  "name": "DartsApp",
-  "short_name": "DartsApp",
+  "name": "Darts",
+  "short_name": "Darts",
+  "description": "Darts zählen und trainieren",
   "id": "./",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#03173d",
+  "background_color": "#1b1b1f",
+  "theme_color": "#141417",
   "prefer_related_applications": false,
   "icons": [
-    {
-      "src": "icon-512.png",
-      "type": "image/png",
-      "sizes": "512x512"
-    },
-    {
-      "src": "icon-192.png",
-      "type": "image/png",
-      "sizes": "192x192"
-    }
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512" },
+    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192" }
   ]
 }

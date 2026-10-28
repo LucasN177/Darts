@@ -11,9 +11,11 @@
 }
 
 #blazor-error-ui {
+    color-scheme: light only;
     background: lightyellow;
     bottom: 0;
     box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
     display: none;
     left: 0;
     padding: 0.6rem 1.25rem 0.7rem 1.25rem;
@@ -40,11 +42,12 @@
     }
 
 .loading-progress {
-    position: relative;
+    position: absolute;
     display: block;
     width: 8rem;
     height: 8rem;
-    margin: 20vh auto 1rem auto;
+    inset: 20vh 0 auto 0;
+    margin: 0 auto 0 auto;
 }
 
     .loading-progress circle {
@@ -56,7 +59,7 @@
     }
 
         .loading-progress circle:last-child {
-            stroke: #1b6ec2;
+            stroke: #ef5350;
             stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
             transition: stroke-dasharray 0.05s ease-in-out;
         }
@@ -72,14 +75,186 @@
         content: var(--blazor-load-percentage-text, "Loading");
     }
 
-code {
-    color: #c02d76;
+html, body {
+    background: #1b1b1f;
 }
 
-.table-width-darts{
-    width: 60px;
+.text-right { text-align: right; }
+.table-scroll { overflow-x: auto; }
+
+/* ---------- Startseite / Modusauswahl ---------- */
+.hero {
+    background: linear-gradient(135deg, rgba(239, 83, 80, .18), rgba(102, 187, 106, .12));
 }
 
-.table-width-NrandSum{
-    width: 30px;
+.mode-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+}
+
+.mode-grid.large {
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}
+
+.mode-tile {
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform .1s ease, border-color .1s ease;
+    user-select: none;
+}
+
+.mode-tile:hover { transform: translateY(-2px); }
+.mode-tile.selected { border-color: var(--mud-palette-primary); }
+
+/* ---------- Spieler-Karten ---------- */
+.player-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+}
+
+.player-grid.single { grid-template-columns: minmax(160px, 360px); }
+
+.player-card {
+    border: 2px solid transparent;
+    transition: border-color .15s ease;
+}
+
+.player-card.active { border-color: var(--mud-palette-primary); }
+.player-card.out { opacity: .5; }
+
+.player-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.player-primary {
+    font-size: 2.8rem;
+    font-weight: 700;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.player-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    font-size: .8rem;
+}
+
+/* ---------- Aktuelle Aufnahme ---------- */
+.turn-slots {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.turn-slot {
+    text-align: center;
+    padding: 8px 0;
+    border-radius: 8px;
+    font-size: 1.3rem;
+    font-weight: 600;
+    background: var(--mud-palette-action-default-hover);
+}
+
+.turn-slot.empty { color: var(--mud-palette-text-disabled); }
+
+/* ---------- Eingabe ---------- */
+.dart-pad {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+.dart-pad-modifiers, .dart-pad-specials {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+}
+
+.dart-pad-specials { grid-template-columns: repeat(4, 1fr); }
+
+.dart-pad-numbers {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+}
+
+.pad-btn {
+    min-height: 52px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.15rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    color: var(--mud-palette-text-primary);
+    background: var(--mud-palette-surface);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+    transition: background-color .08s ease, transform .05s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.pad-btn:active:not(:disabled) { transform: scale(.96); }
+.pad-btn:disabled { opacity: .35; cursor: default; }
+.pad-btn:hover:not(:disabled) { background: var(--mud-palette-action-default-hover); }
+
+.pad-btn.num.relevant { box-shadow: inset 0 0 0 2px var(--mud-palette-secondary); }
+
+.pad-btn.mod { font-size: 1rem; }
+.pad-btn.mod.active { background: var(--mud-palette-primary); color: var(--mud-palette-primary-text); }
+.pad-btn.mod.double.active { background: #2e7d32; color: #fff; }
+.pad-btn.mod.triple.active { background: #c62828; color: #fff; }
+
+.pad-btn.special.bull { background: #b71c1c; color: #fff; }
+.pad-btn.special.relevant:not(.bull) { box-shadow: inset 0 0 0 2px var(--mud-palette-secondary); }
+.pad-btn.special.miss { color: var(--mud-palette-text-secondary); }
+.pad-btn.special.undo { font-size: .95rem; }
+
+@media (min-width: 960px) {
+    .pad-btn { min-height: 58px; }
+}
+
+/* ---------- Cricket ---------- */
+.cricket-board th, .cricket-board td { text-align: center !important; }
+.cricket-board .target-col { text-align: left !important; width: 70px; }
+.cricket-board .marks { font-size: 1.4rem; font-weight: 700; }
+.cricket-board .active { background: rgba(239, 83, 80, .12); }
+.cricket-board tr.closed td { opacity: .4; }
+.cricket-board .points-row td { font-size: 1.1rem; }
+
+/* ---------- Tabellen & Statistik ---------- */
+.turn-history .darts-cell { font-family: "Roboto Mono", monospace; white-space: nowrap; }
+.result-table td, .result-table th { white-space: nowrap; }
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.stat-value {
+    font-size: 1.7rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.stat-tile.highlight { border-left: 4px solid var(--mud-palette-primary); }
+
+.result-banner { border: 2px solid var(--mud-palette-tertiary); }
+
+@media (max-width: 599px) {
+    .player-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+    .player-primary { font-size: 2.1rem; }
+    .pad-btn { min-height: 48px; font-size: 1.05rem; }
+    .cricket-board .marks { font-size: 1.15rem; }
 }

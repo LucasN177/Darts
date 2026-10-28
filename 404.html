@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8" />
     <title>Darts</title>
-    <!-- Automatische Weiterleitung zur Startseite nach 0 Sekunden -->
-    <meta http-equiv="refresh" content="0; url='/'" />
+    <script>
+        // GitHub Pages kennt keine SPA-Routen: Pfad unterhalb des App-Ordners als ?p= an index.html weitergeben.
+        // segmentCount = Anzahl Pfadsegmente der Base-URL (z.B. 1 für /Darts/).
+        var segmentCount = 1;
+        var l = window.location;
+        var segments = l.pathname.split('/').filter(Boolean);
+        var base = '/' + segments.slice(0, segmentCount).join('/') + (segmentCount > 0 ? '/' : '');
+        var rest = '/' + segments.slice(segmentCount).join('/');
+        l.replace(l.protocol + '//' + l.host + base + '?p=' + encodeURIComponent(rest) + l.hash);
+    </script>
 </head>
-<body>
-    <h1>Redirecting...</h1>
-</body>
+<body></body>
 </html>
