@@ -1,38 +1,39 @@
 <#
 .SYNOPSIS
-    Baut die App und legt das Ergebnis fuer GitHub Pages ins Repository-Root.
+    Testet und baut die App fuer GitHub Pages.
 
 .DESCRIPTION
-    GitHub Pages liefert dieses Repository unter https://<user>.github.io/Darts/ aus.
-    Das Skript veroeffentlicht die Blazor-App, setzt den <base href> auf den Pages-Pfad,
-    ersetzt den alten Build im Root und legt .nojekyll an (sonst ignoriert Pages "_framework").
+    Wird vom Workflow .github/workflows/deploy.yml verwendet, laeuft aber auch lokal
+    (Windows PowerShell 5.1 und PowerShell 7). Das Ergebnis liegt in -OutputDir und ist
+    eine statische Seite fuer den Pfad -BasePath (GitHub Pages: /<Repository-Name>/).
 
 .EXAMPLE
     ./publish.ps1
-    ./publish.ps1 -BasePath /
+    ./publish.ps1 -BasePath /Darts/ -OutputDir site
 #>
 param(
-    [string]$BasePath = "/Darts/"
+    [string]$BasePath = "/Darts/",
+    [string]$OutputDir = "site"
 )
 
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
-$out = Join-Path $root ".publish"
+$publishDir = Join-Path $root ".publish"
+if (-not [IO.Path]::IsPathRooted($OutputDir)) { $OutputDir = Join-Path $root $OutputDir }
 
 if (-not $BasePath.EndsWith("/")) { $BasePath += "/" }
 if (-not $BasePath.StartsWith("/")) { $BasePath = "/" + $BasePath }
 
 Write-Host "Tests ausfuehren ..." -ForegroundColor Cyan
-dotnet test (Join-Path $root "tests/DartsApp.Core.Tests") --nologo -v q
+dotnet test (Join-Path $root "tests/DartsApp.Core.Tests") --nologo
 if ($LASTEXITCODE -ne 0) { throw "Tests fehlgeschlagen." }
 
 Write-Host "Veroeffentlichen ..." -ForegroundColor Cyan
-if (Test-Path $out) { Remove-Item $out -Recurse -Force }
-dotnet publish (Join-Path $root "src/DartsApp") -c Release -o $out --nologo
+if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
+dotnet publish (Join-Path $root "src/DartsApp") -c Release -o $publishDir --nologo
 if ($LASTEXITCODE -ne 0) { throw "Publish fehlgeschlagen." }
 
-$site = Join-Path $out "wwwroot"
-
+$site = Join-Path $publishDir "wwwroot"
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 $swAssets = Join-Path $site "service-worker-assets.js"
 
@@ -62,20 +63,9 @@ Update-PublishedFile "404.html" "var segmentCount = 1;" "var segmentCount = $seg
 # Komprimierte Varianten werden von GitHub Pages nicht genutzt
 Get-ChildItem $site -Recurse -Include *.br, *.gz | Remove-Item -Force
 
-Write-Host "Alten Build im Root ersetzen ..." -ForegroundColor Cyan
-$oldItems = @(
-    "_framework", "_content", "css", "wwwroot",
-    "index.html", "404.html", "appsettings.json", "manifest.webmanifest",
-    "service-worker.js", "service-worker-assets.js", "icon-192.png", "icon-512.png",
-    "web.config", "DartsApp.styles.css"
-)
-foreach ($item in $oldItems) {
-    $path = Join-Path $root $item
-    if (Test-Path $path) { Remove-Item $path -Recurse -Force }
-}
+if (Test-Path $OutputDir) { Remove-Item $OutputDir -Recurse -Force }
+Move-Item $site $OutputDir
+New-Item -ItemType File -Path (Join-Path $OutputDir ".nojekyll") -Force | Out-Null
+Remove-Item $publishDir -Recurse -Force
 
-Copy-Item (Join-Path $site "*") $root -Recurse -Force
-New-Item -ItemType File -Path (Join-Path $root ".nojekyll") -Force | Out-Null
-Remove-Item $out -Recurse -Force
-
-Write-Host "Fertig. Base-Pfad: $BasePath - jetzt committen und pushen." -ForegroundColor Green
+Write-Host "Fertig: $OutputDir (Base-Pfad $BasePath)" -ForegroundColor Green

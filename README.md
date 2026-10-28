@@ -26,7 +26,8 @@ src/DartsApp.Core/        Spiellogik (Engines je Modus, Checkout-Rechner, Statis
 src/DartsApp/             Blazor-WASM-App (MudBlazor), Supabase-Anbindung über REST (Auth + PostgREST)
 tests/DartsApp.Core.Tests Unit-Tests der Spiellogik
 supabase/schema.sql       Datenbankschema inkl. Row Level Security
-publish.ps1               Build für GitHub Pages ins Repository-Root
+publish.ps1               Test + Build für GitHub Pages (nach ./site)
+.github/workflows/        Build & Deploy per GitHub Actions
 ```
 
 Alle Spielmodi erben von `GameEngine`. Ein Spiel ist vollständig durch Einstellungen, Spieler und die Liste der
@@ -51,13 +52,16 @@ dotnet run --project src/DartsApp
 dotnet test
 ```
 
-## Veröffentlichen (GitHub Pages)
+## Deployment (GitHub Actions → GitHub Pages)
 
-GitHub Pages liefert das Repository-Root unter `/Darts/` aus. `publish.ps1` baut die App, setzt den Base-Pfad
-und ersetzt den Build im Root:
+Der Workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) läuft bei jedem Push und Pull Request:
+Er führt die Tests aus und baut die App mit `publish.ps1` für den Pfad `/<Repository-Name>/`. Bei Pushes auf `main`
+wird das Ergebnis auf GitHub Pages deployt. Der Build liegt nicht mehr im Repository.
+
+Einmalig nötig: **Settings → Pages → Build and deployment → Source: „GitHub Actions"**.
+
+Lokal denselben Build erzeugen (Ausgabe in `./site`, nicht eingecheckt):
 
 ```bash
-pwsh ./publish.ps1
+powershell -ExecutionPolicy Bypass -File ./publish.ps1 -BasePath /Darts/
 ```
-
-Danach committen und pushen.

@@ -12,3 +12,6 @@ obj/
 
 # Lokale Claude-Konfiguration
 .claude/
+
+# Build-Ausgabe von publish.ps1
+/site/

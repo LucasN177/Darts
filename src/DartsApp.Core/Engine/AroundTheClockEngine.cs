@@ -72,7 +72,7 @@ public sealed class AroundTheClockEngine : GameEngine
     {
         var target = TargetOf(player);
         return new PlayerView(Players[player].Name,
-            target is null ? "✓" : target == Dart.BullSegment ? "Bull" : target.ToString(), "Ziel",
+            target is null ? "✓" : target == Dart.BullSegment ? "Bull" : target.Value.ToString(), "Ziel",
             Details(("Fortschritt", $"{_targetIndex[player]}/{_targets.Length}"),
                 ("Trefferquote", $"{HitRate(player):P0}"),
                 ("Darts", TurnsOf(player).Sum(t => t.Darts.Count).ToString())),
