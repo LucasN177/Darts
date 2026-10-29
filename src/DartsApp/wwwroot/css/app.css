@@ -62,7 +62,6 @@ html.theme-light {
     --splash-accent-2: #2e7d32;
 }
 
-html.theme-light, html.theme-light body { background: var(--splash-bg); }
 
 .splash {
     position: fixed;
@@ -187,7 +186,8 @@ html.theme-light, html.theme-light body { background: var(--splash-bg); }
 }
 
 html, body {
-    background: #1b1b1f;
+    /* Vor dem Start von Blazor dunkel, danach folgt der Hintergrund dem MudBlazor-Theme */
+    background: var(--mud-palette-background, #1b1b1f);
 }
 
 .text-right { text-align: right; }
@@ -329,7 +329,9 @@ html, body {
 
 .pad-btn:active:not(:disabled) { transform: scale(.96); }
 .pad-btn:disabled { opacity: .35; cursor: default; }
-.pad-btn:hover:not(:disabled) { background: var(--mud-palette-action-default-hover); }
+/* Hover nur für neutrale Tasten – aktive Multiplikatoren und Bull behalten ihre Farbe */
+.pad-btn:hover:not(:disabled):not(.active):not(.bull) { background: var(--mud-palette-action-default-hover); }
+.pad-btn.active:hover:not(:disabled), .pad-btn.bull:hover:not(:disabled) { filter: brightness(1.08); }
 
 .pad-btn.num.relevant { box-shadow: inset 0 0 0 2px var(--mud-palette-secondary); }
 
