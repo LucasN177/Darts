@@ -41,39 +41,150 @@
         content: "An error has occurred."
     }
 
-.loading-progress {
-    position: absolute;
-    display: block;
-    width: 8rem;
-    height: 8rem;
-    inset: 20vh 0 auto 0;
-    margin: 0 auto 0 auto;
+/* ---------- Ladebildschirm (vor dem Start von Blazor) ---------- */
+:root {
+    --splash-bg: #141417;
+    --splash-glow: rgba(239, 83, 80, .22);
+    --splash-text: #f5f5f7;
+    --splash-muted: rgba(245, 245, 247, .6);
+    --splash-track: rgba(255, 255, 255, .1);
+    --splash-accent: #ef5350;
+    --splash-accent-2: #66bb6a;
 }
 
-    .loading-progress circle {
-        fill: none;
-        stroke: #e0e0e0;
-        stroke-width: 0.6rem;
-        transform-origin: 50% 50%;
-        transform: rotate(-90deg);
-    }
+html.theme-light {
+    --splash-bg: #f4f4f6;
+    --splash-glow: rgba(198, 40, 40, .14);
+    --splash-text: #1b1b1f;
+    --splash-muted: rgba(27, 27, 31, .6);
+    --splash-track: rgba(0, 0, 0, .08);
+    --splash-accent: #c62828;
+    --splash-accent-2: #2e7d32;
+}
 
-        .loading-progress circle:last-child {
-            stroke: #ef5350;
-            stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
-            transition: stroke-dasharray 0.05s ease-in-out;
-        }
+html.theme-light, html.theme-light body { background: var(--splash-bg); }
 
-.loading-progress-text {
-    position: absolute;
+.splash {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 24px;
+    color: var(--splash-text);
+    background: radial-gradient(ellipse at 50% 38%, var(--splash-glow), transparent 60%), var(--splash-bg);
+    font-family: Roboto, system-ui, -apple-system, "Segoe UI", sans-serif;
     text-align: center;
-    font-weight: bold;
-    inset: calc(20vh + 3.25rem) 0 auto 0.2rem;
+    animation: splash-in .5s ease-out both;
 }
 
-    .loading-progress-text:after {
-        content: var(--blazor-load-percentage-text, "Loading");
-    }
+.splash-logo {
+    position: relative;
+    width: 152px;
+    height: 152px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 20px;
+}
+
+.splash-board {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
+    animation: splash-pulse 2.4s ease-in-out infinite;
+}
+
+.splash-ring {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    animation: splash-spin 1.4s linear infinite;
+}
+
+.splash-ring circle {
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+}
+
+.splash-ring-track { stroke: var(--splash-track); }
+
+.splash-ring-arc {
+    stroke: var(--splash-accent);
+    stroke-dasharray: 28 72;
+    transform-origin: 50% 50%;
+    animation: splash-arc 1.4s ease-in-out infinite;
+}
+
+.splash-title {
+    margin: 0;
+    font-size: 2.4rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+
+.splash-tagline {
+    margin: 4px 0 28px;
+    font-size: .95rem;
+    color: var(--splash-muted);
+    letter-spacing: .06em;
+}
+
+.splash-progress {
+    width: min(260px, 70vw);
+    height: 6px;
+    border-radius: 3px;
+    background: var(--splash-track);
+    overflow: hidden;
+}
+
+/* Blazor setzt --blazor-load-percentage während des Ladens der App-Dateien */
+.splash-progress-bar {
+    height: 100%;
+    width: var(--blazor-load-percentage, 0%);
+    min-width: 6%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--splash-accent), var(--splash-accent-2));
+    transition: width .2s ease-out;
+}
+
+.splash-percent {
+    margin: 10px 0 0;
+    min-height: 1.2em;
+    font-size: .8rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--splash-muted);
+}
+
+.splash-percent::after { content: var(--blazor-load-percentage-text, "Wird geladen …"); }
+
+.splash-credit {
+    position: absolute;
+    bottom: max(24px, env(safe-area-inset-bottom));
+    left: 0;
+    right: 0;
+    margin: 0;
+    font-size: .8rem;
+    letter-spacing: .08em;
+    color: var(--splash-muted);
+}
+
+@keyframes splash-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes splash-spin { to { transform: rotate(360deg); } }
+@keyframes splash-arc {
+    0% { stroke-dasharray: 6 94; }
+    50% { stroke-dasharray: 38 62; }
+    100% { stroke-dasharray: 6 94; }
+}
+@keyframes splash-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+
+@media (prefers-reduced-motion: reduce) {
+    .splash, .splash-board, .splash-ring, .splash-ring-arc { animation: none; }
+}
 
 html, body {
     background: #1b1b1f;

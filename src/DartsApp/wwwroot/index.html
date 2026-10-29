@@ -5,10 +5,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#141417" />
-    <meta name="description" content="Darts zählen und trainieren: X01, Cricket, Around the Clock, Shanghai, Bob's 27, 121 Checkout und High Score." />
+    <meta name="description" content="Darts zählen und trainieren – allein, zu mehreren oder gegen den Computer: X01, Cricket, Around the Clock, Shanghai, Bob's 27, 121 Checkout, High Score, Killer, Halve-It, Baseball und Gotcha." />
     <title>Darts</title>
     <base href="/" />
     <script>
+        // Hell-/Dunkelmodus schon für den Ladebildschirm übernehmen (Einstellung aus der App).
+        try {
+            var ui = JSON.parse(localStorage.getItem("darts.ui") || "null");
+            if (ui && ui.darkMode === false) document.documentElement.classList.add("theme-light");
+        } catch (e) { }
+
         // GitHub Pages SPA-Routing: 404.html leitet tiefe Links als ?p=/pfad hierher um.
         (function (l) {
             var match = l.search.match(/[?&]p=([^&]*)/);
@@ -32,17 +38,27 @@
 
 <body>
     <div id="app">
-        <svg class="loading-progress">
-            <circle r="40%" cx="50%" cy="50%" />
-            <circle r="40%" cx="50%" cy="50%" />
-        </svg>
-        <div class="loading-progress-text"></div>
+        <!-- Ladebildschirm: wird ersetzt, sobald Blazor die App rendert -->
+        <div class="splash" role="status" aria-live="polite" aria-label="Darts wird geladen">
+            <div class="splash-logo">
+                <svg class="splash-ring" viewBox="0 0 120 120" aria-hidden="true">
+                    <circle class="splash-ring-track" cx="60" cy="60" r="56" />
+                    <circle class="splash-ring-arc" cx="60" cy="60" r="56" pathLength="100" />
+                </svg>
+                <img class="splash-board" src="favicon.svg" alt="" width="96" height="96" />
+            </div>
+            <h1 class="splash-title">Darts</h1>
+            <p class="splash-tagline">Zählen · Trainieren · Gewinnen</p>
+            <div class="splash-progress" aria-hidden="true"><div class="splash-progress-bar"></div></div>
+            <p class="splash-percent"></p>
+            <p class="splash-credit">by Lucas Nagelsmann</p>
+        </div>
     </div>
 
     <div id="blazor-error-ui">
         Es ist ein Fehler aufgetreten.
         <a href="." class="reload">Neu laden</a>
-        <span class="dismiss">🗙</span>
+        <span class="dismiss" title="Schließen"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></span>
     </div>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
