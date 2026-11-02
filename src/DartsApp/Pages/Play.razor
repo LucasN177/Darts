@@ -77,11 +77,23 @@ else
 
     <MudGrid Spacing="3">
         <MudItem xs="12" md="7">
-            @if (engine is CricketEngine cricket)
+            @switch (engine)
             {
-                <div class="table-scroll mb-3">
-                    <CricketBoard Engine="cricket" />
-                </div>
+                case CricketEngine cricket:
+                    <div class="table-scroll mb-3">
+                        <CricketBoard Engine="cricket" />
+                    </div>
+                    break;
+                case TicTacToeEngine ticTacToe:
+                    <div class="mb-3">
+                        <TicTacToeBoard Engine="ticTacToe" />
+                    </div>
+                    break;
+                case ScramEngine scram:
+                    <div class="mb-3">
+                        <ScramBoard Engine="scram" />
+                    </div>
+                    break;
             }
             <div class="player-grid @(engine.PlayerCount == 1 ? "single" : "")">
                 @for (var i = 0; i < engine.PlayerCount; i++)
@@ -132,7 +144,7 @@ else
             @if (!engine.IsFinished && !engine.IsBotTurn)
             {
                 <MudButton FullWidth="true" Variant="Variant.Outlined" Class="mt-2" StartIcon="@Icons.Material.Filled.SkipNext"
-                           OnClick="Session.FinishTurnAsync">Aufnahme beenden (Rest = Miss)</MudButton>
+                           OnClick="Session.FinishTurnAsync">@(engine is GolfEngine ? "Stehen bleiben (letzter Treffer zählt)" : "Aufnahme beenden (Rest = Miss)")</MudButton>
             }
         </MudItem>
 

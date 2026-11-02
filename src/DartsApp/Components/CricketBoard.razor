@@ -11,14 +11,14 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var target in CricketEngine.Targets)
+        @foreach (var target in Engine.Targets)
         {
-            var closed = Engine.IsClosedByAll(target);
+            var closed = Engine.IsClosedByAll(target.Key);
             <tr class="@(closed ? "closed" : "")">
-                <td class="target-col"><b>@(target == Dart.BullSegment ? "Bull" : target)</b></td>
+                <td class="target-col"><b>@target.Label</b></td>
                 @for (var p = 0; p < Engine.PlayerCount; p++)
                 {
-                    var marks = Engine.MarksOf(p, target);
+                    var marks = Engine.MarksOf(p, target.Key);
                     <td class="marks @(p == Engine.CurrentPlayer && !Engine.IsFinished ? "active" : "")" title="@($"{Math.Min(marks, 3)} von 3")">
                         @switch (marks)
                         {

@@ -1,0 +1,26 @@
+@* Felder bei Scram: offen (Scorer kann punkten) oder vom Stopper geschlossen. *@
+
+<MudPaper Class="pa-3" Elevation="1">
+    <div class="d-flex align-center mb-2">
+        <MudText Typo="Typo.subtitle2">Hälfte @Engine.Half · Stopper: @Engine.Players[Engine.Stopper].Name</MudText>
+        <MudSpacer />
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">@ScramEngine.Fields.Count(f => !Engine.IsClosed(f)) offen</MudText>
+    </div>
+    <div class="scram-fields">
+        @foreach (var field in ScramEngine.Fields)
+        {
+            var closed = Engine.IsClosed(field);
+            <span class="@($"scram-field {(closed ? "closed" : "")}")" title="@(closed ? "geschlossen" : "offen")">
+                @if (closed)
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Class="scram-lock" />
+                }
+                @(field == Dart.BullSegment ? "Bull" : field)
+            </span>
+        }
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired] public ScramEngine Engine { get; set; } = default!;
+}

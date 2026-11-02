@@ -9,7 +9,7 @@
 
 <MudPaper Class="hero pa-5 mb-4" Elevation="2">
     <MudText Typo="Typo.h4">@Greeting</MudText>
-    <MudText Typo="Typo.body1" Class="mud-text-secondary mb-3">Zählen, trainieren und Fortschritt verfolgen – elf Spielmodi von X01 bis Killer, allein, zu mehreren oder gegen den Computer.</MudText>
+    <MudText Typo="Typo.body1" Class="mud-text-secondary mb-3">Zählen, trainieren und Fortschritt verfolgen – @GameModes.All.Count Spielmodi von X01 bis Golf, allein, zu mehreren oder gegen den Computer.</MudText>
     <div class="d-flex flex-wrap gap-2">
         <MudButton Href="new" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" StartIcon="@Icons.Material.Filled.Add">Neues Spiel</MudButton>
         @if (Session.HasActiveGame)
@@ -41,17 +41,20 @@
     </MudPaper>
 }
 
-<MudText Typo="Typo.h6" Class="mb-2">Spielmodi</MudText>
-<div class="mode-grid large mb-5">
-    @foreach (var info in GameModes.All)
-    {
-        <MudPaper Class="mode-tile pa-4" Elevation="1" @onclick="@(() => Navigation.NavigateTo($"new/{info.Mode}"))">
-            <MudText Typo="Typo.h6">@info.Name</MudText>
-            <MudText Typo="Typo.caption" Color="Color.Primary">@info.Short</MudText>
-            <MudText Typo="Typo.body2" Class="mud-text-secondary mt-1">@info.Description</MudText>
-        </MudPaper>
-    }
-</div>
+@foreach (var group in GameModes.All.GroupBy(m => m.Training))
+{
+    <MudText Typo="Typo.h6" Class="mb-2">@(group.Key ? "Training" : "Spiele")</MudText>
+    <div class="mode-grid large mb-5">
+        @foreach (var info in group)
+        {
+            <MudPaper Class="mode-tile pa-4" Elevation="1" @onclick="@(() => Navigation.NavigateTo($"new/{info.Mode}"))">
+                <MudText Typo="Typo.h6">@info.Name</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Primary">@info.Short</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mt-1">@info.Description</MudText>
+            </MudPaper>
+        }
+    </div>
+}
 
 <div class="d-flex align-center mb-2">
     <MudText Typo="Typo.h6">Letzte Spiele</MudText>

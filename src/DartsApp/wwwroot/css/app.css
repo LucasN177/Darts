@@ -387,3 +387,65 @@ html, body {
     .cricket-board .mark-icon { font-size: 1.4rem; }
     .player-symbol { font-size: 1.9rem !important; }
 }
+
+/* ---------- Tic-Tac-Toe ---------- */
+.ttt-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    max-width: 360px;
+    margin: 0 auto;
+}
+
+.ttt-cell {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 12px;
+    background: var(--mud-palette-surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 2px solid transparent;
+}
+
+.ttt-cell.owner-x { border-color: var(--mud-palette-primary); }
+.ttt-cell.owner-o { border-color: var(--mud-palette-secondary); }
+.ttt-cell.winning { background: var(--mud-palette-action-default-hover); }
+
+.ttt-number { font-size: 1.4rem; font-weight: 700; }
+.ttt-symbol { font-size: 2.4rem !important; }
+
+.ttt-progress { display: flex; flex-direction: column; gap: 4px; }
+.ttt-marks { display: flex; gap: 4px; justify-content: center; }
+
+.ttt-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    border: 1.5px solid var(--mud-palette-lines-default);
+}
+
+.ttt-marks.x .ttt-dot.filled { background: var(--mud-palette-primary); border-color: var(--mud-palette-primary); }
+.ttt-marks.o .ttt-dot.filled { background: var(--mud-palette-secondary); border-color: var(--mud-palette-secondary); }
+
+/* ---------- Scram ---------- */
+.scram-fields { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.scram-field {
+    min-width: 44px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 600;
+    background: var(--mud-palette-action-default-hover);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.scram-field.closed { opacity: .4; text-decoration: line-through; }
+.scram-lock { font-size: .9rem !important; }
