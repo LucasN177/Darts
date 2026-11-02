@@ -21,7 +21,7 @@ jobs:
 
       - name: Test & Publish
         shell: pwsh
-        run: ./publish.ps1 -BasePath "/${{ github.event.repository.name }}/" -OutputDir site
+        run: ./publish.ps1 -BasePath "/" -OutputDir site
 
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request'
