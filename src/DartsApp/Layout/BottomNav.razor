@@ -1,0 +1,78 @@
+@* Navigation am unteren Bildschirmrand – Alternative zur Seitenleiste, einstellbar unter Einstellungen. *@
+@implements IDisposable
+@inject GameSession Session
+@inject NavigationManager Navigation
+
+<nav class="bottom-nav" aria-label="Navigation">
+    <NavLink class="bottom-nav-item" href="" Match="NavLinkMatch.All">
+        <MudIcon Icon="@Icons.Material.Filled.Home" />
+        <span>Start</span>
+    </NavLink>
+    @if (Session.HasActiveGame)
+    {
+        <NavLink class="bottom-nav-item" href="play">
+            <MudIcon Icon="@Icons.Material.Filled.PlayCircle" />
+            <span>Spiel</span>
+        </NavLink>
+    }
+    else
+    {
+        <NavLink class="bottom-nav-item" href="new">
+            <MudIcon Icon="@Icons.Material.Filled.AddCircle" />
+            <span>Neues Spiel</span>
+        </NavLink>
+    }
+    <NavLink class="bottom-nav-item" href="history">
+        <MudIcon Icon="@Icons.Material.Filled.History" />
+        <span>Verlauf</span>
+    </NavLink>
+    <NavLink class="bottom-nav-item" href="stats">
+        <MudIcon Icon="@Icons.Material.Filled.Insights" />
+        <span>Statistik</span>
+    </NavLink>
+    <MudMenu Class="bottom-nav-menu" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.BottomRight">
+        <ActivatorContent>
+            <button type="button" class="bottom-nav-item @(IsMoreActive ? "active" : "")" aria-label="Weitere Seiten" @onclick="context.ToggleAsync">
+                <MudIcon Icon="@Icons.Material.Filled.MoreHoriz" />
+                <span>Mehr</span>
+            </button>
+        </ActivatorContent>
+        <ChildContent>
+            @if (Session.HasActiveGame)
+            {
+                <MudMenuItem Icon="@Icons.Material.Filled.AddCircle" Href="new">Neues Spiel</MudMenuItem>
+            }
+            <MudMenuItem Icon="@Icons.Material.Filled.Groups" Href="players">Spieler</MudMenuItem>
+            <MudMenuItem Icon="@Icons.Material.Filled.MenuBook" Href="rules">Spielmodi &amp; Regeln</MudMenuItem>
+            <MudMenuItem Icon="@Icons.Material.Filled.Settings" Href="settings">Einstellungen</MudMenuItem>
+        </ChildContent>
+    </MudMenu>
+</nav>
+
+@code {
+    /// <summary>"Mehr" hervorheben, wenn eine Seite aus dem Menü offen ist.</summary>
+    private bool IsMoreActive
+    {
+        get
+        {
+            var path = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0];
+            return path is "players" or "rules" or "settings" || (Session.HasActiveGame && path.StartsWith("new"));
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        Session.Changed += OnChanged;
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => OnChanged();
+
+    public void Dispose()
+    {
+        Session.Changed -= OnChanged;
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
+}

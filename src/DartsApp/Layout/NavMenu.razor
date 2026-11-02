@@ -1,4 +1,3 @@
-@using System.Reflection
 @implements IDisposable
 @inject GameSession Session
 @inject DataService Data
@@ -15,6 +14,7 @@
         <MudNavLink Href="stats" Icon="@Icons.Material.Filled.Insights">Statistik</MudNavLink>
         <MudNavLink Href="players" Icon="@Icons.Material.Filled.Groups">Spieler</MudNavLink>
         <MudNavLink Href="rules" Icon="@Icons.Material.Filled.MenuBook">Spielmodi &amp; Regeln</MudNavLink>
+        <MudNavLink Href="settings" Icon="@Icons.Material.Filled.Settings">Einstellungen</MudNavLink>
     </MudNavMenu>
 
     <MudText Typo="Typo.caption" Class="px-4 pt-4 mud-text-secondary d-block">
@@ -23,25 +23,12 @@
 
     <div class="nav-footer px-4 py-3">
         <MudDivider Class="mb-2" />
-        <MudText Typo="Typo.caption" Class="mud-text-secondary d-block" title="@InformationalVersion">Version @Version</MudText>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary d-block" title="@AppInfo.InformationalVersion">Version @AppInfo.Version</MudText>
         <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">by Lucas Nagelsmann</MudText>
     </div>
 </div>
 
 @code {
-    // InformationalVersion enthält beim Build aus Git den Commit, z.B. "2.0.0+fe96620a…".
-    private static readonly string InformationalVersion =
-        typeof(App).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "";
-
-    private static readonly string Version = FormatVersion(InformationalVersion);
-
-    private static string FormatVersion(string informational)
-    {
-        if (string.IsNullOrEmpty(informational)) return "–";
-        var parts = informational.Split('+', 2);
-        return parts.Length == 2 && parts[1].Length >= 7 ? $"{parts[0]} ({parts[1][..7]})" : parts[0];
-    }
-
     protected override void OnInitialized()
     {
         Session.Changed += OnChanged;

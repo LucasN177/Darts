@@ -1,0 +1,54 @@
+@page "/settings"
+@implements IDisposable
+@inject UiState Ui
+@inject DataService Data
+
+<PageTitle>Einstellungen · Darts</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Einstellungen</MudText>
+
+<MudGrid Spacing="3">
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4" Elevation="1">
+            <MudText Typo="Typo.h6" Class="mb-2">Darstellung</MudText>
+            <MudSwitch T="bool" Value="Ui.DarkMode" ValueChanged="Ui.SetDarkModeAsync" Color="Color.Primary" Label="Dunkles Design" />
+
+            <MudText Typo="Typo.subtitle2" Class="mt-4">Navigation</MudText>
+            <MudRadioGroup T="NavigationStyle" Value="Ui.Navigation" ValueChanged="Ui.SetNavigationAsync" Class="d-flex flex-column">
+                <MudRadio Value="NavigationStyle.Drawer" Color="Color.Primary">Seitenleiste (Menü links)</MudRadio>
+                <MudRadio Value="NavigationStyle.BottomBar" Color="Color.Primary">Leiste unten</MudRadio>
+            </MudRadioGroup>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">
+                Die Leiste unten lässt sich auf dem Handy bequem mit dem Daumen bedienen – praktisch, wenn die App
+                als PWA installiert ist. Seltener genutzte Seiten findest du dort unter <b>Mehr</b>.
+            </MudText>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4" Elevation="1">
+            <MudText Typo="Typo.h6" Class="mb-2">Spiel</MudText>
+            <MudSwitch T="bool" Value="Ui.FastBots" ValueChanged="Ui.SetFastBotsAsync" Color="Color.Primary" Label="Computergegner werfen schnell" />
+            <MudSwitch T="bool" Value="Ui.PrivateGames" ValueChanged="Ui.SetPrivateGamesAsync" Color="Color.Primary" Label="Neue Spiele privat starten (nicht speichern)" />
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudPaper Class="pa-4" Elevation="1">
+            <MudText Typo="Typo.h6" Class="mb-1">Über die App</MudText>
+            <MudText Typo="Typo.body2" title="@AppInfo.InformationalVersion">Version @AppInfo.Version · by Lucas Nagelsmann</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-2">
+                Einstellungen werden in diesem Browser gespeichert und bleiben beim nächsten Öffnen der App erhalten.
+                @(Data.IsCloud ? "Spiele werden in deinem Konto gespeichert." : "Ohne Anmeldung werden Spiele nur in diesem Browser gespeichert.")
+            </MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    protected override void OnInitialized() => Ui.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Ui.Changed -= OnChanged;
+}
