@@ -22,7 +22,7 @@ public static class Bot
     /// <summary>Spielt so lange für Computergegner, bis ein Mensch dran oder das Spiel vorbei ist.</summary>
     public static void PlayUntilHuman(GameEngine engine, Random random, int maxDarts = 10_000)
     {
-        for (var i = 0; i < maxDarts && !engine.IsFinished && engine.Players[engine.CurrentPlayer].Bot is { } level; i++)
+        for (var i = 0; i < maxDarts && !engine.IsFinished && engine.CurrentThrower.Bot is { } level; i++)
             Step(engine, level, random);
     }
 }

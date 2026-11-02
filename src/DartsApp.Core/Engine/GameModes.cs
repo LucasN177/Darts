@@ -120,6 +120,44 @@ public static class GameModes
             "Das Bull gezielt trainieren.",
             "Alle Darts gehen auf das Bull. Ein Treffer auf die 25 bringt 1 Punkt, ein Bullseye 2 Punkte. Nach der eingestellten " +
             "Rundenzahl gewinnt die höchste Punktzahl.",
+            Training: true),
+        new(GameMode.HareAndHounds, "Hare and Hounds", "Hase gegen Hunde",
+            "Einmal ums Board: Der Hase flieht, die Hunde jagen ihn.",
+            "Spieler 1 ist der Hase und beginnt auf der 20, alle anderen sind Hunde und starten zwei Felder dahinter (auf der 12). " +
+            "Alle laufen im Uhrzeigersinn ums Board (20, 1, 18, 4, 13, …); jeder Treffer auf das eigene Feld bringt ein Feld weiter. " +
+            "Der Hase gewinnt, wenn er einmal herum wieder an der 20 ankommt. Holt ein Hund den Hasen ein, gewinnt dieser Hund.",
+            MinPlayers: 2),
+        new(GameMode.NineLives, "Nine Lives", "1 bis 20 mit Leben",
+            "Around the Clock mit neun Leben – wer nichts trifft, verliert eins.",
+            "Alle treffen die Zahlen 1 bis 20 der Reihe nach. Eine Aufnahme, in der man sein Ziel nicht trifft, kostet ein Leben; " +
+            "wer alle Leben verloren hat, scheidet aus. Wer zuerst die 20 schafft, gewinnt. Die Zahl der Leben ist einstellbar."),
+        new(GameMode.AllFives, "All Fives", "Nur Fünferzahlen",
+            "Nur durch 5 teilbare Aufnahmen zählen – Summe ÷ 5 Punkte.",
+            "Am Ende jeder Aufnahme wird die Summe der drei Darts geprüft: Ist sie durch 5 teilbar, gibt es Summe ÷ 5 Punkte " +
+            "(z.B. 45 = 9 Punkte), sonst nichts. Wer genau 51 Punkte erreicht (einstellbar), gewinnt; wer darüber käme, " +
+            "bekommt für die Aufnahme keine Punkte."),
+        new(GameMode.Prisoner, "Prisoner", "Gefangene befreien",
+            "Around the Clock, bei dem Fehlwürfe zu Gefangenen werden.",
+            "Alle treffen die Zahlen 1 bis 20 der Reihe nach. Ein Fehlwurf (Miss) bleibt als Gefangener auf der aktuellen Zahl des " +
+            "Werfers liegen. Wer eine Zahl trifft, auf der Gefangene anderer Spieler sitzen, befreit sie: Für jeden befreiten " +
+            "Gefangenen rückt der Befreier ein Feld vor und der Besitzer fällt ein Feld zurück. Eigene Gefangene werden einfach " +
+            "gerettet. Wer zuerst die 20 schafft, gewinnt."),
+        new(GameMode.DoublesLadder, "Doubles Ladder", "D1 bis Bull",
+            "Alle Doppel der Reihe nach – mit Trefferquote pro Doppel.",
+            "In Runde 1 wird mit drei Darts auf D1 geworfen, dann D2 bis D20 und zum Schluss Bullseye. Jeder Doppeltreffer zählt " +
+            "einen Punkt, Fehlwürfe kosten nichts. So siehst du, welche Doppel sitzen und welche noch Training brauchen.",
+            Training: true),
+        new(GameMode.BigFinish, "Big Finish", "100 bis 170",
+            "Hohe Checkouts trainieren – zufällige Ziele ab 100.",
+            "Wie Checkout Roulette, aber nur mit großen Finishes: Pro Versuch wird ein zufälliges, mit drei Darts auscheckbares " +
+            "Ziel zwischen 100 und 170 gezogen (Bereich einstellbar). Für jeden Versuch steht eine Aufnahme zur Verfügung. " +
+            "Gezählt werden erfolgreiche Checkouts.",
+            Training: true),
+        new(GameMode.SuddenDeath, "Sudden Death", "X01 mit Zeitlimit",
+            "501 in einer begrenzten Zahl Aufnahmen auschecken.",
+            "Gespielt wird X01 (Standard 501, Double Out), aber jedes Leg hat ein Aufnahmelimit (Standard 15). Wer innerhalb " +
+            "des Limits auscheckt, gewinnt das Leg. Ist das Limit erreicht, bekommt der Spieler mit dem kleinsten Rest das Leg; " +
+            "allein gespielt ist das Spiel dann verloren.",
             Training: true)
     ];
 
@@ -127,12 +165,12 @@ public static class GameModes
 
     public static GameEngine Create(GameSettings settings, IReadOnlyList<PlayerRef> players) => settings.Mode switch
     {
-        GameMode.X01 => new X01Engine(settings, players),
+        GameMode.X01 or GameMode.SuddenDeath => new X01Engine(settings, players),
         GameMode.Cricket => new CricketEngine(settings, players),
         GameMode.AroundTheClock => new AroundTheClockEngine(settings, players),
         GameMode.Shanghai => new ShanghaiEngine(settings, players),
         GameMode.Bobs27 => new Bobs27Engine(settings, players),
-        GameMode.Checkout121 or GameMode.CheckoutRoulette or GameMode.Catch40 => new CheckoutTrainingEngine(settings, players),
+        GameMode.Checkout121 or GameMode.CheckoutRoulette or GameMode.Catch40 or GameMode.BigFinish => new CheckoutTrainingEngine(settings, players),
         GameMode.HighScore => new HighScoreEngine(settings, players),
         GameMode.Killer => new KillerEngine(settings, players),
         GameMode.HalveIt => new HalveItEngine(settings, players),
@@ -144,6 +182,11 @@ public static class GameModes
         GameMode.Football => new FootballEngine(settings, players),
         GameMode.JdcChallenge => new JdcChallengeEngine(settings, players),
         GameMode.ScoringDrill or GameMode.BullTraining => new ScoringDrillEngine(settings, players),
+        GameMode.HareAndHounds => new HareAndHoundsEngine(settings, players),
+        GameMode.NineLives => new NineLivesEngine(settings, players),
+        GameMode.AllFives => new AllFivesEngine(settings, players),
+        GameMode.Prisoner => new PrisonerEngine(settings, players),
+        GameMode.DoublesLadder => new DoublesLadderEngine(settings, players),
         _ => throw new ArgumentOutOfRangeException(nameof(settings))
     };
 

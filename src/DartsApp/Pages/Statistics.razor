@@ -44,6 +44,7 @@ else
         @switch (_mode)
         {
             case GameMode.X01:
+            case GameMode.SuddenDeath:
                 <StatTile Label="3-Dart-Average" Value="@_stats.Average.ToString("0.00")" Highlight="true" />
                 <StatTile Label="Bester Average" Value="@_stats.BestAverage.ToString("0.00")" />
                 <StatTile Label="First 9" Value="@(_stats.First9Average?.ToString("0.00") ?? "–")" />
@@ -68,6 +69,7 @@ else
                 break;
             case GameMode.Checkout121:
             case GameMode.CheckoutRoulette:
+            case GameMode.BigFinish:
                 <StatTile Label="Checkout-Quote" Value="@Pct(_stats.CheckoutRate)" Highlight="true" Sub="@($"{_stats.CheckoutsHit} / {_stats.CheckoutAttempts}")" />
                 <StatTile Label="Höchstes Ziel" Value="@(_stats.HighestCheckout > 0 ? _stats.HighestCheckout.ToString() : "–")" />
                 <StatTile Label="Meiste Checkouts" Value="@_stats.BestScore.ToString()" />
@@ -91,6 +93,11 @@ else
                 <StatTile Label="Trefferquote" Value="@Pct(_stats.HitRate)" Highlight="true" />
                 <StatTile Label="Meiste Treffer" Value="@_stats.BestScore.ToString()" />
                 <StatTile Label="3-Dart-Average" Value="@_stats.Average.ToString("0.00")" />
+                <StatTile Label="Darts gesamt" Value="@_stats.DartsThrown.ToString()" />
+                break;
+            case GameMode.DoublesLadder:
+                <StatTile Label="Doppelquote" Value="@Pct(_stats.CheckoutRate)" Highlight="true" Sub="@($"{_stats.CheckoutsHit} / {_stats.CheckoutAttempts}")" />
+                <StatTile Label="Meiste Treffer" Value="@_stats.BestScore.ToString()" />
                 <StatTile Label="Darts gesamt" Value="@_stats.DartsThrown.ToString()" />
                 break;
             case GameMode.BullTraining:
@@ -165,7 +172,7 @@ else
                             <td>@game.FinishedAt!.Value.ToLocalTime().ToString("dd.MM.yy")</td>
                             <td>@game.Settings.Describe()</td>
                             <td>@(game.Players.Count <= 1 ? "Solo" : string.Join(", ", game.Results.Where(r => r.Position != result.Position).Select(r => r.Name)))</td>
-                            <td class="text-right">@StatsCalculator.KeyValue(_mode, result).ToString(_mode is GameMode.X01 or GameMode.HighScore or GameMode.Cricket ? "0.00" : _mode is GameMode.ScoringDrill ? "0.0" : "0")</td>
+                            <td class="text-right">@StatsCalculator.KeyValue(_mode, result).ToString(_mode is GameMode.X01 or GameMode.SuddenDeath or GameMode.HighScore or GameMode.Cricket ? "0.00" : _mode is GameMode.ScoringDrill ? "0.0" : "0")</td>
                             <td class="text-right">
                                 @if (result.IsWinner)
                                 {
@@ -209,7 +216,7 @@ else
             // Gespeicherte Spieler zuerst, danach Gäste aus vergangenen Spielen (ohne Computergegner).
             _players = saved.Select(p => new PlayerOption(p.Id.ToString(), p.Id, p.Name)).ToList();
             var guests = _games.SelectMany(g => g.Results)
-                .Where(r => !r.Extra.ContainsKey("bot"))
+                .Where(r => !r.Extra.ContainsKey("bot") && !r.Extra.ContainsKey("team"))
                 .Where(r => r.PlayerId is null || saved.All(p => p.Id != r.PlayerId))
                 .Select(r => r.Name.Trim())
                 .Where(n => _players.All(p => !string.Equals(p.Name, n, StringComparison.OrdinalIgnoreCase)))

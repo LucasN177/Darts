@@ -91,9 +91,9 @@ public sealed class GameSession(LocalStore store, DataService data, UiState ui)
         {
             while (e.Turns.Count > 0)
             {
-                var thrower = e.Turns[^1].PlayerIndex;
+                var thrower = e.ThrowerOf(e.Turns[^1]);
                 e.Undo();
-                if (!e.Players[thrower].IsBot) break;
+                if (!thrower.IsBot) break;
             }
         });
     }
@@ -152,7 +152,7 @@ public sealed class GameSession(LocalStore store, DataService data, UiState ui)
                 await Task.Delay(delay, cts.Token);
                 if (cts.IsCancellationRequested || Engine != engine || !engine.IsBotTurn) break;
 
-                var level = engine.Players[engine.CurrentPlayer].Bot!.Value;
+                var level = engine.CurrentThrower.Bot!.Value;
                 await MutateCoreAsync(e => Bot.Step(e, level, Random.Shared));
             }
         }

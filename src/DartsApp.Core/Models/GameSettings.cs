@@ -21,7 +21,14 @@ public enum GameMode
     Catch40,
     JdcChallenge,
     ScoringDrill,
-    BullTraining
+    BullTraining,
+    HareAndHounds,
+    NineLives,
+    AllFives,
+    Prisoner,
+    DoublesLadder,
+    BigFinish,
+    SuddenDeath
 }
 
 /// <summary>Regel für den Einstieg (X01) bzw. Ausstieg.</summary>
@@ -90,6 +97,8 @@ public sealed record GameSettings
     public int LegsToWin { get; init; } = 1;
     /// <summary>Sets, die zum Gewinn des Spiels nötig sind. 1 = ohne Sets.</summary>
     public int SetsToWin { get; init; } = 1;
+    /// <summary>Maximale Aufnahmen pro Leg (Sudden Death). 0 = unbegrenzt.</summary>
+    public int TurnLimit { get; init; }
 
     // Cricket
     public bool CutThroat { get; init; }
@@ -117,7 +126,8 @@ public sealed record GameSettings
     public int RouletteMin { get; init; } = 2;
     public int RouletteMax { get; init; } = 170;
 
-    // Killer
+    // Killer / Nine Lives
+    /// <summary>Leben pro Spieler (Killer, Nine Lives).</summary>
     public int KillerLives { get; init; } = 3;
 
     // Halve-It
@@ -128,6 +138,9 @@ public sealed record GameSettings
 
     // Football
     public int FootballGoals { get; init; } = 10;
+
+    // All Fives
+    public int FivesTarget { get; init; } = 51;
 
     // Scoring-Drill: Zielfeld in Kurzschreibweise ("T20", "T19", "D16", "BULL", ...)
     public string DrillTarget { get; init; } = "T20";
@@ -160,6 +173,13 @@ public sealed record GameSettings
         GameMode.JdcChallenge => new GameSettings { Mode = mode },
         GameMode.ScoringDrill => new GameSettings { Mode = mode, Rounds = 33 },
         GameMode.BullTraining => new GameSettings { Mode = mode, Rounds = 10, DrillTarget = "BULL" },
+        GameMode.HareAndHounds => new GameSettings { Mode = mode },
+        GameMode.NineLives => new GameSettings { Mode = mode, KillerLives = 9 },
+        GameMode.AllFives => new GameSettings { Mode = mode },
+        GameMode.Prisoner => new GameSettings { Mode = mode },
+        GameMode.DoublesLadder => new GameSettings { Mode = mode },
+        GameMode.BigFinish => new GameSettings { Mode = mode, CheckoutAttempts = 10, CheckoutTurnsPerAttempt = 1, RouletteMin = 100, RouletteMax = 170, OutRule = InOutRule.Double },
+        GameMode.SuddenDeath => new GameSettings { Mode = mode, TurnLimit = 15 },
         _ => throw new ArgumentOutOfRangeException(nameof(mode))
     };
 
@@ -171,7 +191,8 @@ public sealed record GameSettings
             StartScore.ToString(),
             InRule == InOutRule.Single ? null : $"{InRule} In",
             $"{OutRule} Out",
-            SetsToWin > 1 ? $"First to {SetsToWin} Sets ({LegsToWin} Legs)" : LegsToWin > 1 ? $"First to {LegsToWin} Legs" : null
+            SetsToWin > 1 ? $"First to {SetsToWin} Sets ({LegsToWin} Legs)" : LegsToWin > 1 ? $"First to {LegsToWin} Legs" : null,
+            TurnLimit > 0 ? $"max. {TurnLimit} Aufnahmen" : null
         }.Where(s => s is not null)),
         GameMode.Cricket => string.Join(" · ", new[]
         {
@@ -210,6 +231,13 @@ public sealed record GameSettings
         GameMode.JdcChallenge => "Shanghai 10–15 · Doppel · Shanghai 15–20",
         GameMode.ScoringDrill => $"{Rounds * 3} Darts auf {DrillTarget}",
         GameMode.BullTraining => $"{Rounds * 3} Darts auf Bull",
+        GameMode.HareAndHounds => "Hase gegen Hunde · eine Runde ums Board",
+        GameMode.NineLives => $"1 bis 20 · {KillerLives} Leben",
+        GameMode.AllFives => $"Ziel {FivesTarget} Punkte",
+        GameMode.Prisoner => "1 bis 20 · Fehlwürfe werden Gefangene",
+        GameMode.DoublesLadder => "D1 bis D20 und Bull · je 3 Darts",
+        GameMode.BigFinish => $"{RouletteMin}–{RouletteMax} · {CheckoutTurnsPerAttempt * 3} Darts · {CheckoutAttempts} Versuche · {OutRule} Out",
+        GameMode.SuddenDeath => $"{StartScore} · {OutRule} Out · {TurnLimit} Aufnahmen",
         _ => ""
     };
 }

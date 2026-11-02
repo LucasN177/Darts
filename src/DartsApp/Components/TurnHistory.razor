@@ -50,7 +50,7 @@ else
 
     private List<Turn> _turns = [];
 
-    private bool ShowLegs => Engine.Settings.Mode == GameMode.X01 && (Engine.Settings.LegsToWin > 1 || Engine.Settings.SetsToWin > 1);
+    private bool ShowLegs => Engine.Settings.Mode is GameMode.X01 or GameMode.SuddenDeath && (Engine.Settings.LegsToWin > 1 || Engine.Settings.SetsToWin > 1);
 
     private string ScoreLabel => Engine.Settings.Mode switch
     {
@@ -63,6 +63,8 @@ else
         GameMode.TicTacToe => "Felder",
         GameMode.Scram => "Wert",
         GameMode.ScoringDrill => "Treffer",
+        GameMode.HareAndHounds or GameMode.NineLives or GameMode.Prisoner => "Felder",
+        GameMode.DoublesLadder => "Treffer",
         _ => "Punkte"
     };
 

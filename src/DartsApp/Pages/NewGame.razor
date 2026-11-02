@@ -37,6 +37,7 @@
             @switch (_settings.Mode)
             {
                 case GameMode.X01:
+                case GameMode.SuddenDeath:
                     <MudText Typo="Typo.subtitle2">Startpunkte</MudText>
                     <div class="d-flex flex-wrap gap-1 mt-1">
                         @foreach (var score in new[] { 101, 301, 501, 701, 1001 })
@@ -70,7 +71,27 @@
                             <MudNumericField T="int" Label="Sets (First to)" Min="1" Max="13" Value="@_settings.SetsToWin" ValueChanged="@(v => Update(s => s with { SetsToWin = Math.Clamp(v, 1, 13) }))"
                                              HelperText="1 = ohne Sets" />
                         </MudItem>
+                        <MudItem xs="12">
+                            <MudNumericField T="int" Label="Aufnahmelimit pro Leg" Min="@(_settings.Mode == GameMode.SuddenDeath ? 1 : 0)" Max="50" Value="@_settings.TurnLimit"
+                                             ValueChanged="@(v => Update(s => s with { TurnLimit = Math.Clamp(v, s.Mode == GameMode.SuddenDeath ? 1 : 0, 50) }))"
+                                             HelperText="@(_settings.Mode == GameMode.SuddenDeath ? "Nach dem Limit gewinnt der kleinste Rest das Leg" : "0 = ohne Limit")" />
+                        </MudItem>
                     </MudGrid>
+                    break;
+
+                case GameMode.NineLives:
+                    <MudNumericField T="int" Label="Leben" Min="1" Max="20" Value="@_settings.KillerLives" ValueChanged="@(v => Update(s => s with { KillerLives = Math.Clamp(v, 1, 20) }))" />
+                    break;
+
+                case GameMode.AllFives:
+                    <MudNumericField T="int" Label="Zielpunktzahl" Min="5" Max="200" Value="@_settings.FivesTarget" ValueChanged="@(v => Update(s => s with { FivesTarget = Math.Clamp(v, 5, 200) }))"
+                                     HelperText="Klassisch 51 · Punkte = Summe ÷ 5" />
+                    break;
+
+                case GameMode.HareAndHounds:
+                case GameMode.Prisoner:
+                case GameMode.DoublesLadder:
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">Keine weiteren Einstellungen nötig.</MudText>
                     break;
 
                 case GameMode.Cricket:
@@ -187,6 +208,7 @@
                     break;
 
                 case GameMode.CheckoutRoulette:
+                case GameMode.BigFinish:
                     <MudGrid Spacing="2">
                         <MudItem xs="6">
                             <MudNumericField T="int" Label="Von" Min="2" Max="170" Value="@_settings.RouletteMin" ValueChanged="@(v => Update(s => s with { RouletteMin = Math.Clamp(v, 2, 170) }))" />
@@ -266,6 +288,10 @@
                     {
                         var index = i;
                         var player = _selected[i];
+                        @if (_teamMode && index % _teamSize == 0)
+                        {
+                            <MudText Typo="Typo.overline" Class="d-block mt-2 mud-text-secondary">Team @(index / _teamSize + 1)</MudText>
+                        }
                         <MudListItem T="PlayerRef">
                             <div class="d-flex align-center">
                                 <MudAvatar Size="Size.Small" Color="@(index == 0 ? Color.Primary : Color.Default)" Class="mr-3">@(index + 1)</MudAvatar>
@@ -280,6 +306,12 @@
                                     <MudText>@player.Name @(player.Id is null ? "(Gast)" : "")</MudText>
                                 }
                                 <MudSpacer />
+                                @if (HandicapActive)
+                                {
+                                    <MudNumericField T="int" Value="@(player.StartScore ?? _settings.StartScore)" Min="2" Max="9999" Margin="Margin.Dense"
+                                                     ValueChanged="@(v => SetStartScore(index, v))" Style="max-width:90px" Class="mr-1"
+                                                     aria-label="Startwert" HideSpinButtons="true" />
+                                }
                                 <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowUp" Size="Size.Small" Disabled="@(index == 0)" OnClick="() => Move(index, -1)" />
                                 <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowDown" Size="Size.Small" Disabled="@(index == _selected.Count - 1)" OnClick="() => Move(index, 1)" />
                                 <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="() => _selected.RemoveAt(index)" />
@@ -287,6 +319,28 @@
                         </MudListItem>
                     }
                 </MudList>
+            }
+
+            <div class="d-flex flex-wrap align-center gap-3 mt-2">
+                <MudSwitch T="bool" @bind-Value="_teamMode" Color="Color.Primary" Label="Teams" />
+                @if (_teamMode)
+                {
+                    <MudSelect T="int" @bind-Value="_teamSize" Label="Spieler pro Team" Margin="Margin.Dense" Style="max-width:150px">
+                        <MudSelectItem T="int" Value="2">2 (Doppel)</MudSelectItem>
+                        <MudSelectItem T="int" Value="3">3</MudSelectItem>
+                        <MudSelectItem T="int" Value="4">4</MudSelectItem>
+                    </MudSelect>
+                }
+                @if (IsX01Mode && !_teamMode)
+                {
+                    <MudSwitch T="bool" @bind-Value="_handicap" Color="Color.Primary" Label="Handicap (Startwert je Spieler)" />
+                }
+            </div>
+            @if (_teamMode)
+            {
+                <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">
+                    Die Teams werden in der Reihenfolge der Liste gebildet; die Mitglieder werfen abwechselnd und spielen auf einen gemeinsamen Spielstand.
+                </MudText>
             }
 
             <MudDivider Class="my-3" />
@@ -327,13 +381,17 @@
     </MudItem>
 
     <MudItem xs="12" Class="d-flex justify-end gap-2">
-        @if (_selected.Count < ModeInfo.MinPlayers)
+        @if (_teamMode && _selected.Count % _teamSize != 0)
         {
-            <MudText Typo="Typo.body2" Class="mud-text-secondary align-self-center">@ModeInfo.Name braucht @(ExactPlayers ? "genau" : "mindestens") @ModeInfo.MinPlayers Spieler – füge Mitspieler oder Computergegner hinzu.</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary align-self-center">Für Teams zu je @_teamSize Spielern muss die Spielerzahl durch @_teamSize teilbar sein.</MudText>
         }
-        else if (_selected.Count > ModeInfo.MaxPlayers)
+        else if (Units < ModeInfo.MinPlayers)
         {
-            <MudText Typo="Typo.body2" Class="mud-text-secondary align-self-center">@ModeInfo.Name wird mit @(ExactPlayers ? "genau" : "höchstens") @ModeInfo.MaxPlayers Spielern gespielt – entferne Spieler aus der Liste.</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary align-self-center">@ModeInfo.Name braucht @(ExactPlayers ? "genau" : "mindestens") @ModeInfo.MinPlayers @UnitName – füge Mitspieler oder Computergegner hinzu.</MudText>
+        }
+        else if (Units > ModeInfo.MaxPlayers)
+        {
+            <MudText Typo="Typo.body2" Class="mud-text-secondary align-self-center">@ModeInfo.Name wird mit @(ExactPlayers ? "genau" : "höchstens") @ModeInfo.MaxPlayers @UnitName gespielt – entferne Spieler aus der Liste.</MudText>
         }
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" StartIcon="@Icons.Material.Filled.PlayArrow"
                    Disabled="@(!PlayerCountValid)" OnClick="StartAsync">Spiel starten</MudButton>
@@ -362,7 +420,36 @@
 
     private GameModeInfo ModeInfo => GameModes.Get(_settings.Mode);
     private bool ExactPlayers => ModeInfo.MinPlayers == ModeInfo.MaxPlayers;
-    private bool PlayerCountValid => _selected.Count >= ModeInfo.MinPlayers && _selected.Count <= ModeInfo.MaxPlayers;
+    private bool _teamMode;
+    private int _teamSize = 2;
+    private bool _handicap;
+
+    private int MaxListPlayers => _teamMode ? GameEngine.MaxPlayers * _teamSize : GameEngine.MaxPlayers;
+
+    private bool IsX01Mode => _settings.Mode is GameMode.X01 or GameMode.SuddenDeath;
+    private bool HandicapActive => _handicap && IsX01Mode && !_teamMode;
+
+    /// <summary>Anzahl der "Spieler" im Spiel – bei Teams die Anzahl der Teams.</summary>
+    private int Units => _teamMode ? _selected.Count / _teamSize : _selected.Count;
+    private string UnitName => _teamMode ? "Teams" : "Spieler";
+
+    private bool PlayerCountValid =>
+        (!_teamMode || (_selected.Count > 0 && _selected.Count % _teamSize == 0))
+        && Units >= ModeInfo.MinPlayers && Units <= ModeInfo.MaxPlayers;
+
+    private void SetStartScore(int index, int value)
+    {
+        var start = Math.Clamp(value, 2, 9999);
+        _selected[index] = _selected[index] with { StartScore = start == _settings.StartScore ? null : start };
+    }
+
+    /// <summary>Spieler bzw. Teams in Spielreihenfolge; Handicaps nur, wenn aktiv.</summary>
+    private List<PlayerRef> BuildPlayers()
+    {
+        var players = _selected.Select(p => HandicapActive ? p : p with { StartScore = null }).ToList();
+        if (!_teamMode) return players;
+        return players.Chunk(_teamSize).Select(members => PlayerRef.Team(members)).ToList();
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -398,19 +485,19 @@
         var existing = _selected.FindIndex(s => s.Id == player.Id);
         if (existing >= 0)
             _selected.RemoveAt(existing);
-        else if (_selected.Count < GameEngine.MaxPlayers)
+        else if (_selected.Count < MaxListPlayers)
             _selected.Add(new PlayerRef(player.Id, player.Name));
         else
-            Snackbar.Add($"Maximal {GameEngine.MaxPlayers} Spieler", Severity.Warning);
+            Snackbar.Add($"Maximal {MaxListPlayers} Spieler", Severity.Warning);
     }
 
     private async Task AddGuestAsync()
     {
         var name = _guestName.Trim();
         if (name.Length == 0) return;
-        if (_selected.Count >= GameEngine.MaxPlayers)
+        if (_selected.Count >= MaxListPlayers)
         {
-            Snackbar.Add($"Maximal {GameEngine.MaxPlayers} Spieler", Severity.Warning);
+            Snackbar.Add($"Maximal {MaxListPlayers} Spieler", Severity.Warning);
             return;
         }
 
@@ -439,9 +526,9 @@
 
     private void AddBot()
     {
-        if (_selected.Count >= GameEngine.MaxPlayers)
+        if (_selected.Count >= MaxListPlayers)
         {
-            Snackbar.Add($"Maximal {GameEngine.MaxPlayers} Spieler", Severity.Warning);
+            Snackbar.Add($"Maximal {MaxListPlayers} Spieler", Severity.Warning);
             return;
         }
 
@@ -473,7 +560,7 @@
 
         try
         {
-            await Session.StartAsync(_settings, _selected);
+            await Session.StartAsync(_settings, BuildPlayers());
         }
         catch (ArgumentException ex)
         {

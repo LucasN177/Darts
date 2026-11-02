@@ -39,6 +39,7 @@ public sealed class CheckoutTrainingEngine : GameEngine
         switch (settings.Mode)
         {
             case GameMode.CheckoutRoulette:
+            case GameMode.BigFinish:
                 _targets = RouletteTargets(settings);
                 break;
             case GameMode.Catch40:

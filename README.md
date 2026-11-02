@@ -20,6 +20,10 @@ werden mit Anmeldung in Supabase gespeichert, ohne Anmeldung lokal im Browser.
 | **Scram** | Genau 2 Spieler: Stopper schließt Felder, Scorer punktet auf offenen Feldern, danach Rollentausch |
 | **Tic-Tac-Toe** | Genau 2 Spieler: 3×3-Raster aus Zahlen und Bull, 3 Marks belegen ein Feld, drei in einer Reihe gewinnen |
 | **Football** | Bull = Ballbesitz, mit Ball zählt jedes Doppel als Tor, erste Mannschaft mit 10 Toren gewinnt |
+| **Hare and Hounds** | Ab 2 Spielern: der Hase läuft ab der 20 einmal ums Board, die Hunde starten zwei Felder dahinter und jagen ihn |
+| **Nine Lives** | 1–20 der Reihe nach, jede Aufnahme ohne Treffer kostet eines von neun Leben |
+| **All Fives** | Nur durch 5 teilbare Aufnahmen zählen (Summe ÷ 5), genau 51 Punkte gewinnen |
+| **Prisoner** | 1–20 der Reihe nach, Fehlwürfe werden Gefangene; wer sie befreit, rückt vor, der Besitzer fällt zurück |
 
 ### Training
 
@@ -34,6 +38,13 @@ werden mit Anmeldung in Supabase gespeichert, ohne Anmeldung lokal im Browser.
 | **High Score** | Feste Rundenzahl, höchste Punktzahl gewinnt |
 | **Scoring-Drill** | Viele Darts auf ein Feld (z.B. T20), Trefferquote im Feld und im Segment |
 | **Bull-Training** | Darts auf das Bull, 25 = 1 Punkt, Bullseye = 2 Punkte |
+| **Doubles Ladder** | D1 bis D20 und Bull mit je drei Darts, Trefferquote pro Doppel |
+| **Big Finish** | Zufällige Checkouts von 100 bis 170 |
+| **Sudden Death** | X01 mit Aufnahmelimit pro Leg (Standard 15); danach gewinnt der kleinste Rest |
+
+**Teams:** In jedem Modus lassen sich Teams aus 2–4 Spielern bilden (auch gemischt mit Computergegnern); ein Team
+spielt auf einen gemeinsamen Spielstand, die Mitglieder werfen abwechselnd.
+**Handicap:** In X01 und Sudden Death kann jeder Spieler einen eigenen Startwert bekommen (z.B. 501 gegen 301).
 
 Alle Modi lassen sich allein oder mit bis zu 8 Spielern an einem Gerät spielen (Scram und Tic-Tac-Toe mit genau zwei) – auch gemischt mit
 **Computergegnern** in sechs Stufen (Anfänger Ø ~25 bis Weltklasse Ø ~100). Der Computer wirft auf einer
