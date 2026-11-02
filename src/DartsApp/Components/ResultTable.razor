@@ -30,8 +30,50 @@
                     <th class="text-right">Trefferquote</th>
                     break;
                 case GameMode.Checkout121:
+                case GameMode.CheckoutRoulette:
                     <th class="text-right">Checkouts</th>
                     <th class="text-right">Bestes Ziel</th>
+                    <th class="text-right">Darts</th>
+                    break;
+                case GameMode.Catch40:
+                    <th class="text-right">Punkte</th>
+                    <th class="text-right">Checkouts</th>
+                    <th class="text-right">Darts</th>
+                    break;
+                case GameMode.Golf:
+                    <th class="text-right">Schläge</th>
+                    <th class="text-right">Par</th>
+                    <th class="text-right">Hole in One</th>
+                    break;
+                case GameMode.Scram:
+                    <th class="text-right">Punkte</th>
+                    <th class="text-right">Geschlossen</th>
+                    <th class="text-right">Darts</th>
+                    break;
+                case GameMode.TicTacToe:
+                    <th class="text-right">Felder</th>
+                    <th class="text-right">Marks</th>
+                    <th class="text-right">Darts</th>
+                    break;
+                case GameMode.Football:
+                    <th class="text-right">Tore</th>
+                    <th class="text-right">Ballgewinne</th>
+                    <th class="text-right">Darts</th>
+                    break;
+                case GameMode.JdcChallenge:
+                    <th class="text-right">Punkte</th>
+                    <th class="text-right">Doppel</th>
+                    <th class="text-right">Shanghais</th>
+                    break;
+                case GameMode.ScoringDrill:
+                    <th class="text-right">Treffer</th>
+                    <th class="text-right">Quote</th>
+                    <th class="text-right">Segment</th>
+                    <th class="text-right">Ø</th>
+                    break;
+                case GameMode.BullTraining:
+                    <th class="text-right">Punkte</th>
+                    <th class="text-right">Bull-Quote</th>
                     <th class="text-right">Darts</th>
                     break;
                 case GameMode.Bobs27:
@@ -114,8 +156,50 @@
                         <td class="text-right">@Extra(r, "hit_rate", "P0")</td>
                         break;
                     case GameMode.Checkout121:
+                    case GameMode.CheckoutRoulette:
                         <td class="text-right"><b>@r.CheckoutsHit / @r.CheckoutAttempts</b></td>
                         <td class="text-right">@(r.HighestCheckout > 0 ? r.HighestCheckout : "–")</td>
+                        <td class="text-right">@r.DartsThrown</td>
+                        break;
+                    case GameMode.Catch40:
+                        <td class="text-right"><b>@r.Score</b></td>
+                        <td class="text-right">@r.CheckoutsHit / @r.CheckoutAttempts</td>
+                        <td class="text-right">@r.DartsThrown</td>
+                        break;
+                    case GameMode.Golf:
+                        <td class="text-right"><b>@r.Score</b></td>
+                        <td class="text-right">@ToPar(r)</td>
+                        <td class="text-right">@Extra(r, "holes_in_one", "0")</td>
+                        break;
+                    case GameMode.Scram:
+                        <td class="text-right"><b>@r.Score</b></td>
+                        <td class="text-right">@Extra(r, "closed", "0")</td>
+                        <td class="text-right">@r.DartsThrown</td>
+                        break;
+                    case GameMode.TicTacToe:
+                        <td class="text-right"><b>@r.Score</b></td>
+                        <td class="text-right">@Extra(r, "marks", "0")</td>
+                        <td class="text-right">@r.DartsThrown</td>
+                        break;
+                    case GameMode.Football:
+                        <td class="text-right"><b>@r.Score</b></td>
+                        <td class="text-right">@Extra(r, "steals", "0")</td>
+                        <td class="text-right">@r.DartsThrown</td>
+                        break;
+                    case GameMode.JdcChallenge:
+                        <td class="text-right"><b>@r.Score</b></td>
+                        <td class="text-right">@Extra(r, "doubles", "0") / 21</td>
+                        <td class="text-right">@Extra(r, "shanghai", "0")</td>
+                        break;
+                    case GameMode.ScoringDrill:
+                        <td class="text-right"><b>@r.Score</b></td>
+                        <td class="text-right">@Extra(r, "hit_rate", "P1")</td>
+                        <td class="text-right">@Extra(r, "segment_rate", "P0")</td>
+                        <td class="text-right">@r.Average.ToString("0.00")</td>
+                        break;
+                    case GameMode.BullTraining:
+                        <td class="text-right"><b>@r.Score</b></td>
+                        <td class="text-right">@Extra(r, "hit_rate", "P1")</td>
                         <td class="text-right">@r.DartsThrown</td>
                         break;
                     case GameMode.Bobs27:
@@ -161,6 +245,9 @@
     [Parameter] public GameSettings? Settings { get; set; }
 
     private bool ShowLegs => Settings is { } s && (s.LegsToWin > 1 || s.SetsToWin > 1);
+
+    private static string ToPar(PlayerResult r) =>
+        r.Extra.TryGetValue("to_par", out var v) ? (v > 0 ? $"+{v:0}" : v.ToString("0")) : "–";
 
     private static string Extra(PlayerResult r, string key, string format) =>
         r.Extra.TryGetValue(key, out var v) ? v.ToString(format) : "–";

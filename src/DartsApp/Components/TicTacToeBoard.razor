@@ -1,0 +1,41 @@
+@* 3×3-Raster für Tic-Tac-Toe: Zahl, Besitzer und Marks beider Spieler je Feld. *@
+
+<div class="ttt-board">
+    @for (var c = 0; c < 9; c++)
+    {
+        var cell = c;
+        var owner = Engine.OwnerOf(cell);
+        var winning = Engine.WinningLine?.Contains(cell) == true;
+        <div class="@($"ttt-cell {(owner is null ? "" : owner == 0 ? "owner-x" : "owner-o")} {(winning ? "winning" : "")}")">
+            <span class="ttt-number">@Engine.Label(cell)</span>
+            @if (owner is { } o)
+            {
+                <MudIcon Icon="@(o == 0 ? Icons.Material.Filled.Close : Icons.Material.Outlined.Circle)" Class="ttt-symbol"
+                         Color="@(o == 0 ? Color.Primary : Color.Secondary)" aria-label="@Engine.Players[o].Name" />
+            }
+            else
+            {
+                <div class="ttt-progress">
+                    @for (var p = 0; p < 2; p++)
+                    {
+                        var marks = Engine.MarksOf(p, cell);
+                        <span class="@($"ttt-marks {(p == 0 ? "x" : "o")}")" title="@($"{Engine.Players[p].Name}: {marks} von {TicTacToeEngine.MarksToClaim}")">
+                            @for (var m = 0; m < TicTacToeEngine.MarksToClaim; m++)
+                            {
+                                <span class="@($"ttt-dot {(m < marks ? "filled" : "")}")"></span>
+                            }
+                        </span>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+<div class="d-flex justify-center gap-4 mt-2">
+    <MudText Typo="Typo.caption"><MudIcon Icon="@Icons.Material.Filled.Close" Size="Size.Small" Color="Color.Primary" Style="vertical-align:middle" /> @Engine.Players[0].Name</MudText>
+    <MudText Typo="Typo.caption"><MudIcon Icon="@Icons.Material.Outlined.Circle" Size="Size.Small" Color="Color.Secondary" Style="vertical-align:middle" /> @Engine.Players[1].Name</MudText>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public TicTacToeEngine Engine { get; set; } = default!;
+}

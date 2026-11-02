@@ -153,8 +153,7 @@ public sealed class GameSession(LocalStore store, DataService data, UiState ui)
                 if (cts.IsCancellationRequested || Engine != engine || !engine.IsBotTurn) break;
 
                 var level = engine.Players[engine.CurrentPlayer].Bot!.Value;
-                var dart = Bot.NextDart(engine, level, Random.Shared);
-                await MutateCoreAsync(e => e.Throw(dart));
+                await MutateCoreAsync(e => Bot.Step(e, level, Random.Shared));
             }
         }
         catch (OperationCanceledException)

@@ -77,7 +77,7 @@ public static class StatsCalculator
             Count180 = results.Sum(r => r.Count180),
             Count140 = results.Sum(r => r.Count140),
             Count100 = results.Sum(r => r.Count100),
-            BestScore = results.Max(r => r.Score),
+            BestScore = LowerIsBetter(mode) ? results.Min(r => r.Score) : results.Max(r => r.Score),
             AverageScore = Math.Round(results.Average(r => r.Score), 2),
             HitRate = hitRate,
             FewestDartsWin = wins.Count == 0 ? null : wins.Min(r => r.DartsThrown)
@@ -96,16 +96,25 @@ public static class StatsCalculator
     {
         GameMode.X01 or GameMode.HighScore or GameMode.Cricket => r.Average,
         GameMode.AroundTheClock => r.DartsThrown,
-        GameMode.Checkout121 => r.CheckoutsHit,
+        GameMode.Checkout121 or GameMode.CheckoutRoulette => r.CheckoutsHit,
+        GameMode.ScoringDrill => Math.Round(r.Extra.GetValueOrDefault("hit_rate") * 100, 1),
         _ => r.Score
     };
+
+    /// <summary>Modi, in denen ein niedriger Wert besser ist (Golf: Schläge).</summary>
+    public static bool LowerIsBetter(GameMode mode) => mode == GameMode.Golf;
 
     public static string KeyLabel(GameMode mode) => mode switch
     {
         GameMode.X01 or GameMode.HighScore => "3-Dart-Average",
         GameMode.Cricket => "Marks pro Runde",
         GameMode.AroundTheClock => "Darts",
-        GameMode.Checkout121 => "Checkouts",
+        GameMode.Checkout121 or GameMode.CheckoutRoulette => "Checkouts",
+        GameMode.Golf => "Schläge",
+        GameMode.ScoringDrill => "Trefferquote in %",
+        GameMode.Football => "Tore",
+        GameMode.TicTacToe => "Felder",
+        GameMode.Baseball => "Runs",
         _ => "Punkte"
     };
 }

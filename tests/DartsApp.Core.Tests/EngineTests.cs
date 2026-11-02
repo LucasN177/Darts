@@ -339,7 +339,7 @@ public class TrainingModeTests
     [Fact]
     public void Checkout121_SuccessRaisesTarget()
     {
-        var e = new Checkout121Engine(GameSettings.DefaultFor(GameMode.Checkout121) with { CheckoutAttempts = 2 }, Solo);
+        var e = new CheckoutTrainingEngine(GameSettings.DefaultFor(GameMode.Checkout121) with { CheckoutAttempts = 2 }, Solo);
         e.Throw(Dart.T(20)); e.Throw(Dart.S(11)); e.Throw(Dart.Bullseye);
         Assert.Equal(122, e.TargetOf(0));
         Assert.Equal(122, e.RemainingOf(0));
@@ -355,7 +355,7 @@ public class TrainingModeTests
     [Fact]
     public void Checkout121_ResetRule()
     {
-        var e = new Checkout121Engine(GameSettings.DefaultFor(GameMode.Checkout121) with { CheckoutOnFail = CheckoutFailRule.MinusOne }, Solo);
+        var e = new CheckoutTrainingEngine(GameSettings.DefaultFor(GameMode.Checkout121) with { CheckoutOnFail = CheckoutFailRule.MinusOne }, Solo);
         e.FinishTurn(); e.FinishTurn(); e.FinishTurn();
         Assert.Equal(120, e.TargetOf(0));
     }

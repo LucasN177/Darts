@@ -76,13 +76,14 @@ public class BotTests(ITestOutputHelper output)
         for (var game = 0; game < 20; game++)
         {
             var settings = GameSettings.DefaultFor(mode) with { Seed = game + 1 };
-            PlayerRef[] players = [new(null, "A", BotLevel.Intermediate), new(null, "B", BotLevel.League), new(null, "C", BotLevel.Beginner)];
+            PlayerRef[] all = [new(null, "A", BotLevel.Intermediate), new(null, "B", BotLevel.League), new(null, "C", BotLevel.Beginner)];
+            var players = all.Take(Math.Min(all.Length, GameModes.Get(mode).MaxPlayers)).ToArray();
             var engine = GameModes.Create(settings, players);
             Bot.PlayUntilHuman(engine, random, maxDarts: 50_000);
 
             Assert.True(engine.IsFinished, $"{mode}: Spiel {game} nicht beendet");
             var results = engine.GetResults();
-            Assert.Equal(3, results.Count);
+            Assert.Equal(players.Length, results.Count);
             Assert.All(results, r => Assert.Equal(1, r.Extra["bot"] > 0 ? 1 : 0));
 
             // Nachspielen ergibt denselben Endstand.

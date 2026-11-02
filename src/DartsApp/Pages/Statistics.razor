@@ -67,9 +67,36 @@ else
                 <StatTile Label="Darts gesamt" Value="@_stats.DartsThrown.ToString()" />
                 break;
             case GameMode.Checkout121:
+            case GameMode.CheckoutRoulette:
                 <StatTile Label="Checkout-Quote" Value="@Pct(_stats.CheckoutRate)" Highlight="true" Sub="@($"{_stats.CheckoutsHit} / {_stats.CheckoutAttempts}")" />
                 <StatTile Label="Höchstes Ziel" Value="@(_stats.HighestCheckout > 0 ? _stats.HighestCheckout.ToString() : "–")" />
                 <StatTile Label="Meiste Checkouts" Value="@_stats.BestScore.ToString()" />
+                break;
+            case GameMode.Catch40:
+                <StatTile Label="Ø Punkte" Value="@_stats.AverageScore.ToString("0.0")" Highlight="true" Sub="von 120" />
+                <StatTile Label="Bestes Ergebnis" Value="@_stats.BestScore.ToString()" />
+                <StatTile Label="Checkout-Quote" Value="@Pct(_stats.CheckoutRate)" Sub="@($"{_stats.CheckoutsHit} / {_stats.CheckoutAttempts}")" />
+                break;
+            case GameMode.Golf:
+                <StatTile Label="Ø Schläge" Value="@_stats.AverageScore.ToString("0.0")" Highlight="true" />
+                <StatTile Label="Beste Runde" Value="@_stats.BestScore.ToString()" />
+                <StatTile Label="Darts gesamt" Value="@_stats.DartsThrown.ToString()" />
+                break;
+            case GameMode.JdcChallenge:
+                <StatTile Label="Ø Punkte" Value="@_stats.AverageScore.ToString("0")" Highlight="true" />
+                <StatTile Label="Bestes Ergebnis" Value="@_stats.BestScore.ToString()" />
+                <StatTile Label="Doppelquote" Value="@Pct(_stats.CheckoutRate)" Sub="@($"{_stats.CheckoutsHit} / {_stats.CheckoutAttempts}")" />
+                break;
+            case GameMode.ScoringDrill:
+                <StatTile Label="Trefferquote" Value="@Pct(_stats.HitRate)" Highlight="true" />
+                <StatTile Label="Meiste Treffer" Value="@_stats.BestScore.ToString()" />
+                <StatTile Label="3-Dart-Average" Value="@_stats.Average.ToString("0.00")" />
+                <StatTile Label="Darts gesamt" Value="@_stats.DartsThrown.ToString()" />
+                break;
+            case GameMode.BullTraining:
+                <StatTile Label="Bull-Quote" Value="@Pct(_stats.HitRate)" Highlight="true" />
+                <StatTile Label="Ø Punkte" Value="@_stats.AverageScore.ToString("0.0")" />
+                <StatTile Label="Bestes Ergebnis" Value="@_stats.BestScore.ToString()" />
                 break;
             case GameMode.Bobs27:
                 <StatTile Label="Ø Punkte" Value="@_stats.AverageScore.ToString("0")" Highlight="true" />
@@ -138,7 +165,7 @@ else
                             <td>@game.FinishedAt!.Value.ToLocalTime().ToString("dd.MM.yy")</td>
                             <td>@game.Settings.Describe()</td>
                             <td>@(game.Players.Count <= 1 ? "Solo" : string.Join(", ", game.Results.Where(r => r.Position != result.Position).Select(r => r.Name)))</td>
-                            <td class="text-right">@StatsCalculator.KeyValue(_mode, result).ToString(_mode is GameMode.X01 or GameMode.HighScore or GameMode.Cricket ? "0.00" : "0")</td>
+                            <td class="text-right">@StatsCalculator.KeyValue(_mode, result).ToString(_mode is GameMode.X01 or GameMode.HighScore or GameMode.Cricket ? "0.00" : _mode is GameMode.ScoringDrill ? "0.0" : "0")</td>
                             <td class="text-right">
                                 @if (result.IsWinner)
                                 {

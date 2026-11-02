@@ -13,16 +13,20 @@
 
 <MudGrid Spacing="3">
     <MudItem xs="12">
-        <div class="mode-grid">
-            @foreach (var info in GameModes.All)
-            {
-                <MudPaper Class="@($"mode-tile pa-3 {(info.Mode == _settings.Mode ? "selected" : "")}")" Elevation="@(info.Mode == _settings.Mode ? 4 : 1)"
-                          @onclick="() => SelectMode(info.Mode)">
-                    <MudText Typo="Typo.subtitle1"><b>@info.Name</b></MudText>
-                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@info.Short</MudText>
-                </MudPaper>
-            }
-        </div>
+        @foreach (var group in GameModes.All.GroupBy(m => m.Training))
+        {
+            <MudText Typo="Typo.subtitle2" Class="@(group.Key ? "mt-3 mb-1" : "mb-1")">@(group.Key ? "Training" : "Spiele")</MudText>
+            <div class="mode-grid">
+                @foreach (var info in group)
+                {
+                    <MudPaper Class="@($"mode-tile pa-3 {(info.Mode == _settings.Mode ? "selected" : "")}")" Elevation="@(info.Mode == _settings.Mode ? 4 : 1)"
+                              @onclick="() => SelectMode(info.Mode)">
+                        <MudText Typo="Typo.subtitle1"><b>@info.Name</b></MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">@info.Short</MudText>
+                    </MudPaper>
+                }
+            </div>
+        }
     </MudItem>
 
     <MudItem xs="12" md="6">
@@ -70,6 +74,12 @@
                     break;
 
                 case GameMode.Cricket:
+                    <MudSelect T="CricketVariant" Label="Variante" Value="@_settings.CricketVariant" ValueChanged="@(v => Update(s => s with { CricketVariant = v }))" Class="mb-2">
+                        <MudSelectItem Value="CricketVariant.Standard">Standard (15 bis 20, Bull)</MudSelectItem>
+                        <MudSelectItem Value="CricketVariant.Tactics">Tactics (10 bis 20, Bull)</MudSelectItem>
+                        <MudSelectItem Value="CricketVariant.Random">Random (6 zufällige Zahlen, Bull)</MudSelectItem>
+                        <MudSelectItem Value="CricketVariant.MickeyMouse">Mickey Mouse (12 bis 20, Doppel, Triple, Bull)</MudSelectItem>
+                    </MudSelect>
                     <MudSwitch T="bool" Value="@_settings.CutThroat" ValueChanged="@(v => Update(s => s with { CutThroat = v }))" Color="Color.Primary" Label="Cut Throat (Punkte gehen an die Gegner)" />
                     <MudNumericField T="int" Label="Rundenlimit" Min="0" Max="99" Value="@_settings.Rounds" ValueChanged="@(v => Update(s => s with { Rounds = Math.Clamp(v, 0, 99) }))" HelperText="0 = unbegrenzt" />
                     break;
@@ -134,7 +144,15 @@
                     break;
 
                 case GameMode.HalveIt:
-                    <MudText Typo="Typo.body2">Ziele: 15 · 16 · Doppel · 17 · 18 · Triple · 19 · 20 · Bull. Start mit @HalveItEngine.StartPoints Punkten.</MudText>
+                    <MudSelect T="HalveItVariant" Label="Variante" Value="@_settings.HalveItVariant" ValueChanged="@(v => Update(s => s with { HalveItVariant = v }))">
+                        <MudSelectItem Value="HalveItVariant.Classic">Klassisch (9 Runden, Start 40)</MudSelectItem>
+                        <MudSelectItem Value="HalveItVariant.Bermuda">Bermuda Triangle (13 Runden, Start 0)</MudSelectItem>
+                    </MudSelect>
+                    <MudText Typo="Typo.body2" Class="mt-2">
+                        Ziele: @(_settings.HalveItVariant == HalveItVariant.Bermuda
+                                   ? "12 · 13 · 14 · Doppel · 15 · 16 · 17 · Triple · 18 · 19 · 20 · 25 · Bullseye"
+                                   : "15 · 16 · Doppel · 17 · 18 · Triple · 19 · 20 · Bull")
+                    </MudText>
                     break;
 
                 case GameMode.Baseball:
@@ -143,6 +161,83 @@
 
                 case GameMode.Gotcha:
                     <MudNumericField T="int" Label="Zielpunktzahl" Min="50" Max="1001" Value="@_settings.GotchaTarget" ValueChanged="@(v => Update(s => s with { GotchaTarget = Math.Clamp(v, 50, 1001) }))" />
+                    break;
+
+                case GameMode.Golf:
+                    <div class="d-flex flex-wrap gap-1">
+                        @foreach (var holes in new[] { 9, 18 })
+                        {
+                            var value = holes;
+                            <MudChip T="int" Color="@(value == _settings.Rounds ? Color.Primary : Color.Default)"
+                                     Variant="@(value == _settings.Rounds ? Variant.Filled : Variant.Outlined)"
+                                     OnClick="@(() => Update(s => s with { Rounds = value }))">@value Löcher</MudChip>
+                        }
+                    </div>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-1">Triple = 1 · Double = 2 · Single = 3 · kein Treffer = 5 Schläge</MudText>
+                    break;
+
+                case GameMode.Scram:
+                case GameMode.TicTacToe:
+                case GameMode.JdcChallenge:
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">Keine weiteren Einstellungen nötig.</MudText>
+                    break;
+
+                case GameMode.Football:
+                    <MudNumericField T="int" Label="Tore zum Sieg" Min="1" Max="30" Value="@_settings.FootballGoals" ValueChanged="@(v => Update(s => s with { FootballGoals = Math.Clamp(v, 1, 30) }))" />
+                    break;
+
+                case GameMode.CheckoutRoulette:
+                    <MudGrid Spacing="2">
+                        <MudItem xs="6">
+                            <MudNumericField T="int" Label="Von" Min="2" Max="170" Value="@_settings.RouletteMin" ValueChanged="@(v => Update(s => s with { RouletteMin = Math.Clamp(v, 2, 170) }))" />
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudNumericField T="int" Label="Bis" Min="2" Max="170" Value="@_settings.RouletteMax" ValueChanged="@(v => Update(s => s with { RouletteMax = Math.Clamp(v, 2, 170) }))" />
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudNumericField T="int" Label="Versuche" Min="1" Max="100" Value="@_settings.CheckoutAttempts" ValueChanged="@(v => Update(s => s with { CheckoutAttempts = Math.Clamp(v, 1, 100) }))" />
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudNumericField T="int" Label="Aufnahmen pro Versuch" Min="1" Max="3" Value="@_settings.CheckoutTurnsPerAttempt" ValueChanged="@(v => Update(s => s with { CheckoutTurnsPerAttempt = Math.Clamp(v, 1, 3) }))"
+                                             HelperText="@($"= {_settings.CheckoutTurnsPerAttempt * 3} Darts")" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudSelect T="InOutRule" Label="Ausstieg" Value="@_settings.OutRule" ValueChanged="@(v => Update(s => s with { OutRule = v }))">
+                                <MudSelectItem Value="InOutRule.Double">Double Out</MudSelectItem>
+                                <MudSelectItem Value="InOutRule.Master">Master Out</MudSelectItem>
+                                <MudSelectItem Value="InOutRule.Single">Single Out</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                    </MudGrid>
+                    break;
+
+                case GameMode.Catch40:
+                    <MudSelect T="InOutRule" Label="Ausstieg" Value="@_settings.OutRule" ValueChanged="@(v => Update(s => s with { OutRule = v }))">
+                        <MudSelectItem Value="InOutRule.Double">Double Out</MudSelectItem>
+                        <MudSelectItem Value="InOutRule.Master">Master Out</MudSelectItem>
+                        <MudSelectItem Value="InOutRule.Single">Single Out</MudSelectItem>
+                    </MudSelect>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-1">2 Darts = 3 Punkte · 3 Darts = 2 Punkte · 4–6 Darts = 1 Punkt</MudText>
+                    break;
+
+                case GameMode.ScoringDrill:
+                    <MudText Typo="Typo.subtitle2">Zielfeld</MudText>
+                    <div class="d-flex flex-wrap gap-1 mt-1">
+                        @foreach (var field in new[] { "T20", "T19", "T18", "T17", "D20", "D16", "BULL" })
+                        {
+                            var value = field;
+                            <MudChip T="string" Color="@(value == _settings.DrillTarget ? Color.Primary : Color.Default)"
+                                     Variant="@(value == _settings.DrillTarget ? Variant.Filled : Variant.Outlined)"
+                                     OnClick="@(() => Update(s => s with { DrillTarget = value }))">@(value == "BULL" ? "Bull" : value)</MudChip>
+                        }
+                    </div>
+                    <MudNumericField T="int" Label="Aufnahmen" Min="1" Max="100" Value="@_settings.Rounds" ValueChanged="@(v => Update(s => s with { Rounds = Math.Clamp(v, 1, 100) }))"
+                                     HelperText="@($"= {_settings.Rounds * 3} Darts")" Class="mt-2" />
+                    break;
+
+                case GameMode.BullTraining:
+                    <MudNumericField T="int" Label="Aufnahmen" Min="1" Max="100" Value="@_settings.Rounds" ValueChanged="@(v => Update(s => s with { Rounds = Math.Clamp(v, 1, 100) }))"
+                                     HelperText="@($"= {_settings.Rounds * 3} Darts · 25 = 1 Punkt, Bullseye = 2 Punkte")" />
                     break;
             }
 
@@ -234,10 +329,14 @@
     <MudItem xs="12" Class="d-flex justify-end gap-2">
         @if (_selected.Count < ModeInfo.MinPlayers)
         {
-            <MudText Typo="Typo.body2" Class="mud-text-secondary align-self-center">@ModeInfo.Name braucht mindestens @ModeInfo.MinPlayers Spieler – füge Mitspieler oder Computergegner hinzu.</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary align-self-center">@ModeInfo.Name braucht @(ExactPlayers ? "genau" : "mindestens") @ModeInfo.MinPlayers Spieler – füge Mitspieler oder Computergegner hinzu.</MudText>
+        }
+        else if (_selected.Count > ModeInfo.MaxPlayers)
+        {
+            <MudText Typo="Typo.body2" Class="mud-text-secondary align-self-center">@ModeInfo.Name wird mit @(ExactPlayers ? "genau" : "höchstens") @ModeInfo.MaxPlayers Spielern gespielt – entferne Spieler aus der Liste.</MudText>
         }
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" StartIcon="@Icons.Material.Filled.PlayArrow"
-                   Disabled="@(_selected.Count < ModeInfo.MinPlayers)" OnClick="StartAsync">Spiel starten</MudButton>
+                   Disabled="@(!PlayerCountValid)" OnClick="StartAsync">Spiel starten</MudButton>
     </MudItem>
 </MudGrid>
 
@@ -262,6 +361,8 @@
     private BotLevel _botLevel = BotLevel.Intermediate;
 
     private GameModeInfo ModeInfo => GameModes.Get(_settings.Mode);
+    private bool ExactPlayers => ModeInfo.MinPlayers == ModeInfo.MaxPlayers;
+    private bool PlayerCountValid => _selected.Count >= ModeInfo.MinPlayers && _selected.Count <= ModeInfo.MaxPlayers;
 
     protected override async Task OnInitializedAsync()
     {
@@ -361,7 +462,7 @@
 
     private async Task StartAsync()
     {
-        if (_selected.Count < ModeInfo.MinPlayers) return;
+        if (!PlayerCountValid) return;
 
         if (Session.HasActiveGame)
         {

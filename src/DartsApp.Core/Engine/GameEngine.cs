@@ -65,6 +65,9 @@ public abstract class GameEngine
     /// <summary>Feld, auf das ein Computergegner als Nächstes zielt.</summary>
     public virtual Dart BotAim() => Dart.T(20);
 
+    /// <summary>True, wenn der Computer seine Aufnahme jetzt freiwillig beenden möchte (z.B. Golf).</summary>
+    public virtual bool BotWantsToEndTurn => false;
+
     public bool IsBotTurn => !IsFinished && Players[CurrentPlayer].IsBot;
 
     /// <summary>Statuszeile über dem Scoreboard, z.B. "Set 1 · Leg 2 · Runde 4".</summary>
