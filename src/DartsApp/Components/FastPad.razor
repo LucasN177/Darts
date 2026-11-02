@@ -1,0 +1,131 @@
+@* Schnelleingabe: pro Aufnahme nur die Summe der drei Darts. *@
+
+<div class="fast-pad @(Disabled ? "disabled" : "")" tabindex="0" @onkeydown="OnKeyDown" @ref="_root">
+    <div class="fast-display">
+        <span class="@(_value.Length == 0 ? "placeholder" : "")">@(_value.Length == 0 ? "Summe" : _value)</span>
+    </div>
+
+    @if (_error is not null)
+    {
+        <MudText Typo="Typo.caption" Color="Color.Error" Class="d-block text-center mb-1">@_error</MudText>
+    }
+
+    @if (CheckoutPending is { } remaining)
+    {
+        <MudPaper Class="pa-2 mb-2 fast-checkout" Elevation="0">
+            <MudText Typo="Typo.body2" Class="mb-1 text-center"><b>@remaining</b> ausgecheckt – mit wie vielen Darts?</MudText>
+            <div class="fast-checkout-buttons">
+                @foreach (var darts in FastInput.CheckoutDartOptions(remaining, Engine.CheckoutTarget!.Value.OutRule))
+                {
+                    var k = darts;
+                    <button type="button" class="pad-btn special checkout" @onclick="() => SubmitAsync(k)">@k @(k == 1 ? "Dart" : "Darts")</button>
+                }
+                @if (Engine.CheckoutTarget!.Value.OutRule != InOutRule.Single)
+                {
+                    <button type="button" class="pad-btn special miss" @onclick="() => SubmitAsync(0)">Kein Checkout (Bust)</button>
+                }
+            </div>
+        </MudPaper>
+    }
+
+    <div class="fast-quick">
+        @if (Engine.CheckoutTarget is { } target && FastInput.CheckoutDartOptions(target.Remaining, target.OutRule).Count > 0)
+        {
+            <button type="button" class="pad-btn special rest" disabled="@Disabled" @onclick="() => SetValue(target.Remaining)">Rest @target.Remaining</button>
+        }
+        @foreach (var quick in QuickValues)
+        {
+            var value = quick;
+            <button type="button" class="pad-btn special" disabled="@Disabled" @onclick="() => SetValue(value)">@value</button>
+        }
+    </div>
+
+    <div class="fast-keys">
+        @for (var n = 1; n <= 9; n++)
+        {
+            var digit = n;
+            <button type="button" class="pad-btn num" disabled="@Disabled" @onclick="() => AddDigit(digit)">@digit</button>
+        }
+        <button type="button" class="pad-btn special" disabled="@(Disabled || _value.Length == 0)" @onclick="Backspace" aria-label="Löschen">
+            <MudIcon Icon="@Icons.Material.Filled.Backspace" Size="Size.Small" />
+        </button>
+        <button type="button" class="pad-btn num" disabled="@Disabled" @onclick="() => AddDigit(0)">0</button>
+        <button type="button" class="pad-btn special ok" disabled="@(Disabled || CheckoutPending is not null)" @onclick="() => SubmitAsync(null)" aria-label="Eintragen">
+            <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" /> OK
+        </button>
+    </div>
+
+    <button type="button" class="pad-btn special undo fast-undo" disabled="@(!CanUndo)" @onclick="OnUndo">
+        <MudIcon Icon="@Icons.Material.Filled.Undo" Size="Size.Small" /> Letzte Aufnahme zurück
+    </button>
+</div>
+
+@code {
+    private static readonly int[] QuickValues = [26, 41, 45, 60, 81, 85, 100, 140, 180];
+
+    [Parameter, EditorRequired] public GameEngine Engine { get; set; } = default!;
+    /// <summary>Summe und ggf. Checkout-Darts eintragen; liefert eine Fehlermeldung oder null.</summary>
+    [Parameter, EditorRequired] public Func<int, int?, Task<string?>> OnSubmit { get; set; } = default!;
+    [Parameter] public EventCallback OnUndo { get; set; }
+    [Parameter] public bool CanUndo { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private ElementReference _root;
+    private string _value = "";
+    private string? _error;
+
+    private int? Value => int.TryParse(_value, out var v) ? v : null;
+
+    /// <summary>Rest, wenn die eingegebene Summe genau auscheckt und nach der Dartanzahl gefragt werden muss.</summary>
+    private int? CheckoutPending => Value is { } v && FastInput.WouldFinish(Engine, v)
+                                    && FastInput.CheckoutDartOptions(v, Engine.CheckoutTarget!.Value.OutRule).Count > 0
+        ? v
+        : null;
+
+    private void AddDigit(int digit)
+    {
+        if (Disabled || _value.Length >= 3) return;
+        _value = (_value == "0" ? "" : _value) + digit;
+        _error = null;
+    }
+
+    private void Backspace()
+    {
+        if (_value.Length > 0) _value = _value[..^1];
+        _error = null;
+    }
+
+    private void SetValue(int value)
+    {
+        _value = value.ToString();
+        _error = null;
+    }
+
+    private async Task SubmitAsync(int? checkoutDarts)
+    {
+        if (Disabled) return;
+        var total = Value ?? 0; // leere Eingabe = 0 Punkte
+        _error = await OnSubmit(total, checkoutDarts);
+        if (_error is null) _value = "";
+        await FocusAsync();
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key.Length == 1 && char.IsDigit(e.Key[0])) AddDigit(e.Key[0] - '0');
+        else if (e.Key == "Backspace") Backspace();
+        else if (e.Key == "Enter" && CheckoutPending is null) await SubmitAsync(null);
+    }
+
+    private async Task FocusAsync()
+    {
+        try
+        {
+            await _root.FocusAsync();
+        }
+        catch (InvalidOperationException)
+        {
+            // Element noch nicht gerendert – egal.
+        }
+    }
+}

@@ -65,6 +65,12 @@ public abstract class GameEngine
     /// <summary>Feld, auf das ein Computergegner als Nächstes zielt.</summary>
     public virtual Dart BotAim() => Dart.T(20);
 
+    /// <summary>
+    /// Für die Schnelleingabe: aktueller Rest und Ausstiegsregel, falls der Modus auf 0 herunterzählt (X01, Checkout-Training).
+    /// Dann erkennt die Eingabe Checkouts und Busts; sonst zählt nur die Summe.
+    /// </summary>
+    public virtual (int Remaining, InOutRule OutRule)? CheckoutTarget => null;
+
     /// <summary>True, wenn der Computer seine Aufnahme jetzt freiwillig beenden möchte (z.B. Golf).</summary>
     public virtual bool BotWantsToEndTurn => false;
 

@@ -85,19 +85,46 @@ public sealed class GameSession(LocalStore store, DataService data, UiState ui)
 
     public Task FinishTurnAsync() => IsBotTurn ? Task.CompletedTask : MutateAsync(e => e.FinishTurn());
 
+    /// <summary>True, wenn im laufenden Spiel nur Aufnahme-Summen eingegeben werden.</summary>
+    public bool IsFastInput => Engine is { } e && e.Settings.FastInput && GameModes.Get(e.Settings.Mode).FastInputAvailable(e.Settings);
+
     /// <summary>
-    /// Nimmt den letzten Dart eines Menschen zurück. Würfe von Computergegnern danach werden ebenfalls
-    /// entfernt, sonst würde der Computer sofort wieder werfen.
+    /// Schnelleingabe: Aufnahme-Summe eines Menschen. Gibt bei ungültiger Eingabe eine Fehlermeldung zurück.
+    /// </summary>
+    /// <param name="checkoutDarts">Bei einer Summe, die genau den Rest trifft: Anzahl Darts des Checkouts, 0 = kein Checkout.</param>
+    public async Task<string?> ThrowTotalAsync(int total, int? checkoutDarts = null)
+    {
+        if (Engine is not { } engine || IsBotTurn || engine.IsFinished) return null;
+        var result = FastInput.ToDarts(engine, total, checkoutDarts);
+        if (!result.IsValid) return result.Error;
+
+        await MutateAsync(e =>
+        {
+            foreach (var dart in result.Darts)
+            {
+                if (e.IsFinished) break;
+                e.Throw(dart);
+            }
+        });
+        return null;
+    }
+
+    /// <summary>
+    /// Nimmt den letzten Dart eines Menschen zurück (bei Schnelleingabe die ganze Aufnahme). Würfe von
+    /// Computergegnern danach werden ebenfalls entfernt, sonst würde der Computer sofort wieder werfen.
     /// </summary>
     public async Task UndoAsync()
     {
         StopBots();
+        var wholeTurn = IsFastInput;
         await MutateAsync(e =>
         {
             while (e.Turns.Count > 0)
             {
-                var thrower = e.ThrowerOf(e.Turns[^1]);
-                e.Undo();
+                var last = e.Turns[^1];
+                var thrower = e.ThrowerOf(last);
+                var darts = wholeTurn && !thrower.IsBot ? last.Darts.Count : 1;
+                for (var i = 0; i < darts; i++) e.Undo();
                 if (!thrower.IsBot) break;
             }
         });

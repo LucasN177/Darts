@@ -2,7 +2,12 @@ using DartsApp.Core.Models;
 
 namespace DartsApp.Core.Engine;
 
-public sealed record GameModeInfo(GameMode Mode, string Name, string Short, string Description, string Rules, int MinPlayers = 1, int MaxPlayers = GameEngine.MaxPlayers, bool Training = false);
+public sealed record GameModeInfo(GameMode Mode, string Name, string Short, string Description, string Rules, int MinPlayers = 1, int MaxPlayers = GameEngine.MaxPlayers, bool Training = false, bool SupportsFastInput = false)
+{
+    /// <summary>Schnelleingabe ist für diese Einstellungen möglich (X01 nur mit Single In – ein Double In lässt sich aus der Summe nicht ablesen).</summary>
+    public bool FastInputAvailable(GameSettings settings) =>
+        SupportsFastInput && (settings.Mode is not (GameMode.X01 or GameMode.SuddenDeath) || settings.InRule == InOutRule.Single);
+}
 
 public static class GameModes
 {
@@ -13,7 +18,8 @@ public static class GameModes
             "Jede Aufnahme wird vom Rest abgezogen. Je nach Einstellung muss mit einem Doppel (Double Out) " +
             "oder Doppel/Triple (Master Out) beendet werden. Wer unter 0, auf 1 (bei Double/Master Out) oder ohne " +
             "passendes Feld auf 0 kommt, überwirft sich (Bust) – die Aufnahme zählt nicht. Optional mit Double/Master In, " +
-            "mehreren Legs und Sets."),
+            "mehreren Legs und Sets.",
+            SupportsFastInput: true),
         new(GameMode.Cricket, "Cricket", "15-20 & Bull",
             "Felder 15 bis 20 und Bull schließen und dabei Punkte sammeln.",
             "Ein Feld ist mit drei Treffern geschlossen (Single = 1, Double = 2, Triple = 3 Marks). Weitere Treffer auf ein " +
@@ -43,12 +49,14 @@ public static class GameModes
             "Pro Versuch stehen (standardmäßig) drei Aufnahmen bzw. neun Darts zur Verfügung, um das Ziel mit Double Out " +
             "auszuchecken. Gelingt der Checkout, steigt das Ziel um eins. Misslingt er, bleibt das Ziel gleich, sinkt um " +
             "eins oder springt auf den Startwert zurück – je nach Einstellung. Gezählt werden erfolgreiche Checkouts.",
-            Training: true),
+            Training: true,
+            SupportsFastInput: true),
         new(GameMode.HighScore, "High Score", "Punkte sammeln",
             "So viele Punkte wie möglich in einer festen Anzahl Runden.",
             "Jede Aufnahme zählt voll. Nach der eingestellten Rundenzahl gewinnt die höchste Punktzahl. Gut zum Training " +
             "des Scorings auf T20/T19.",
-            Training: true),
+            Training: true,
+            SupportsFastInput: true),
         new(GameMode.Killer, "Killer", "Partyspiel ab 2",
             "Jeder hat eine eigene Zahl – als Killer jagst du die Doppel der anderen.",
             "Zu Beginn bekommt jeder Spieler zufällig eine eigene Zahl. Wer das Doppel seiner Zahl trifft, wird zum Killer. " +
@@ -98,13 +106,15 @@ public static class GameModes
             "Pro Versuch wird ein zufälliges, mit drei Darts auscheckbares Ziel im eingestellten Bereich (Standard 2 bis 170) " +
             "gezogen; alle Spieler bekommen dieselben Ziele. Für jeden Versuch steht die eingestellte Anzahl Aufnahmen zur " +
             "Verfügung. Gezählt werden erfolgreiche Checkouts.",
-            Training: true),
+            Training: true,
+            SupportsFastInput: true),
         new(GameMode.Catch40, "Catch 40", "61 bis 100",
             "Die 40 Checkouts von 61 bis 100 mit je sechs Darts.",
             "Der Reihe nach werden die Ziele 61 bis 100 gespielt, für jedes stehen sechs Darts (zwei Aufnahmen) zur Verfügung. " +
             "Ein Checkout mit zwei Darts bringt 3 Punkte, mit drei Darts 2 Punkte und mit vier bis sechs Darts 1 Punkt. " +
             "Maximal sind 120 Punkte möglich.",
-            Training: true),
+            Training: true,
+            SupportsFastInput: true),
         new(GameMode.JdcChallenge, "JDC Challenge", "Jugendtraining",
             "Das Trainingsprogramm der Junior Darts Corporation.",
             "Drei Abschnitte: Shanghai auf 10 bis 15 (Treffer zählen ihren Wert, Single + Double + Triple in einer Aufnahme " +
@@ -135,7 +145,8 @@ public static class GameModes
             "Nur durch 5 teilbare Aufnahmen zählen – Summe ÷ 5 Punkte.",
             "Am Ende jeder Aufnahme wird die Summe der drei Darts geprüft: Ist sie durch 5 teilbar, gibt es Summe ÷ 5 Punkte " +
             "(z.B. 45 = 9 Punkte), sonst nichts. Wer genau 51 Punkte erreicht (einstellbar), gewinnt; wer darüber käme, " +
-            "bekommt für die Aufnahme keine Punkte."),
+            "bekommt für die Aufnahme keine Punkte.",
+            SupportsFastInput: true),
         new(GameMode.Prisoner, "Prisoner", "Gefangene befreien",
             "Around the Clock, bei dem Fehlwürfe zu Gefangenen werden.",
             "Alle treffen die Zahlen 1 bis 20 der Reihe nach. Ein Fehlwurf (Miss) bleibt als Gefangener auf der aktuellen Zahl des " +
@@ -152,13 +163,15 @@ public static class GameModes
             "Wie Checkout Roulette, aber nur mit großen Finishes: Pro Versuch wird ein zufälliges, mit drei Darts auscheckbares " +
             "Ziel zwischen 100 und 170 gezogen (Bereich einstellbar). Für jeden Versuch steht eine Aufnahme zur Verfügung. " +
             "Gezählt werden erfolgreiche Checkouts.",
-            Training: true),
+            Training: true,
+            SupportsFastInput: true),
         new(GameMode.SuddenDeath, "Sudden Death", "X01 mit Zeitlimit",
             "501 in einer begrenzten Zahl Aufnahmen auschecken.",
             "Gespielt wird X01 (Standard 501, Double Out), aber jedes Leg hat ein Aufnahmelimit (Standard 15). Wer innerhalb " +
             "des Limits auscheckt, gewinnt das Leg. Ist das Limit erreicht, bekommt der Spieler mit dem kleinsten Rest das Leg; " +
             "allein gespielt ist das Spiel dann verloren.",
-            Training: true)
+            Training: true,
+            SupportsFastInput: true)
     ];
 
     public static GameModeInfo Get(GameMode mode) => All.First(m => m.Mode == mode);

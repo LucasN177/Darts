@@ -182,6 +182,9 @@ public sealed class X01Engine : GameEngine
         }
     }
 
+    public override (int Remaining, InOutRule OutRule)? CheckoutTarget =>
+        _state[CurrentPlayer].Started ? (_state[CurrentPlayer].Remaining, Settings.OutRule) : null;
+
     public override Dart BotAim()
     {
         var p = _state[CurrentPlayer];

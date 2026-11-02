@@ -449,3 +449,35 @@ html, body {
 
 .scram-field.closed { opacity: .4; text-decoration: line-through; }
 .scram-lock { font-size: .9rem !important; }
+
+/* ---------- Schnelleingabe ---------- */
+.fast-pad { display: flex; flex-direction: column; gap: 6px; outline: none; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+.fast-pad.disabled { opacity: .6; }
+
+.fast-display {
+    text-align: center;
+    font-size: 2.6rem;
+    font-weight: 700;
+    padding: 6px 0;
+    border-radius: 10px;
+    background: var(--mud-palette-surface);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+    font-variant-numeric: tabular-nums;
+}
+
+.fast-display .placeholder { color: var(--mud-palette-text-disabled); font-weight: 400; }
+
+.fast-quick { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.fast-quick .pad-btn { min-height: 42px; font-size: 1rem; }
+.fast-quick .pad-btn.rest { grid-column: span 2; color: var(--mud-palette-secondary); }
+
+.fast-keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.fast-keys .pad-btn { min-height: 56px; }
+.pad-btn.special.ok { background: var(--mud-palette-primary); color: var(--mud-palette-primary-text); }
+
+.fast-checkout { background: var(--mud-palette-action-default-hover); }
+.fast-checkout-buttons { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.fast-checkout-buttons .pad-btn { flex: 1 1 90px; min-height: 46px; font-size: 1rem; }
+.pad-btn.special.checkout { background: var(--mud-palette-secondary); color: #fff; }
+
+.fast-undo { min-height: 44px; }
