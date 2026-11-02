@@ -72,27 +72,3 @@ publish.ps1               Test + Build für GitHub Pages (nach ./site)
 
 Alle Spielmodi erben von `GameEngine`. Ein Spiel ist vollständig durch Einstellungen, Spieler und die Liste der
 geworfenen Darts beschrieben – Undo und das Wiederherstellen gespeicherter Spiele spielen diese Liste einfach neu ab.
-
-## Entwicklung
-
-```bash
-dotnet run --project src/DartsApp
-```
-
-```bash
-dotnet test
-```
-
-## Deployment (GitHub Actions → GitHub Pages)
-
-Der Workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) läuft bei jedem Push und Pull Request:
-Er führt die Tests aus und baut die App mit `publish.ps1` für den Pfad `/<Repository-Name>/`. Bei Pushes auf `main`
-wird das Ergebnis auf GitHub Pages deployt. Der Build liegt nicht mehr im Repository.
-
-Einmalig nötig: **Settings → Pages → Build and deployment → Source: „GitHub Actions"**.
-
-Lokal denselben Build erzeugen (Ausgabe in `./site`, nicht eingecheckt):
-
-```bash
-powershell -ExecutionPolicy Bypass -File ./publish.ps1 -BasePath /Darts/
-```
