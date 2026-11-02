@@ -23,6 +23,12 @@ else
         <div>
             <MudText Typo="Typo.h5">@GameModes.Get(engine.Settings.Mode).Name</MudText>
             <MudText Typo="Typo.caption" Class="mud-text-secondary">@engine.Settings.Describe() · @engine.Status</MudText>
+            @if (Session.IsPrivate)
+            {
+                <MudTooltip Text="Wird nirgends gespeichert – Neuladen der Seite beendet das Spiel">
+                    <MudChip T="string" Size="Size.Small" Icon="@Icons.Material.Filled.VisibilityOff" Variant="Variant.Outlined" Class="ml-0">Privat</MudChip>
+                </MudTooltip>
+            }
         </div>
         <MudSpacer />
         <MudMenu Icon="@Icons.Material.Filled.MoreVert" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
@@ -46,7 +52,11 @@ else
                 <div>
                     <MudText Typo="Typo.h5">@(engine.Winner is { } w ? $"{engine.Players[w].Name} gewinnt!" : "Spiel beendet")</MudText>
                     <MudText Typo="Typo.body2" Class="mud-text-secondary">
-                        @if (Session.IsSaving)
+                        @if (Session.IsPrivate)
+                        {
+                            <span>Privates Spiel – nicht gespeichert.</span>
+                        }
+                        else if (Session.IsSaving)
                         {
                             <span>Wird gespeichert …</span>
                         }

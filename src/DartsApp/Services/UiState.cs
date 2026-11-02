@@ -9,12 +9,15 @@ public sealed class UiState(LocalStore store)
     {
         public bool DarkMode { get; set; } = true;
         public bool FastBots { get; set; }
+        /// <summary>Neue Spiele standardmäßig privat starten (nur die Einstellung, keine Spieldaten).</summary>
+        public bool PrivateGames { get; set; }
     }
 
     private Data _data = new();
 
     public bool DarkMode => _data.DarkMode;
     public bool FastBots => _data.FastBots;
+    public bool PrivateGames => _data.PrivateGames;
 
     /// <summary>Pause vor dem ersten Wurf einer Computer-Aufnahme (ms).</summary>
     public int BotTurnDelay => FastBots ? 350 : 1100;
@@ -28,6 +31,12 @@ public sealed class UiState(LocalStore store)
     public Task ToggleDarkModeAsync()
     {
         _data.DarkMode = !_data.DarkMode;
+        return SaveAsync();
+    }
+
+    public Task SetPrivateGamesAsync(bool value)
+    {
+        _data.PrivateGames = value;
         return SaveAsync();
     }
 

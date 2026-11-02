@@ -6,6 +6,7 @@
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject UiState Ui
 
 <PageTitle>Neues Spiel · Darts</PageTitle>
 
@@ -363,7 +364,7 @@
                               OnKeyDown="@(e => e.Key == "Enter" ? AddGuestAsync() : Task.CompletedTask)" />
                 <MudButton Variant="Variant.Outlined" OnClick="AddGuestAsync" Disabled="@string.IsNullOrWhiteSpace(_guestName)">Hinzufügen</MudButton>
             </div>
-            <MudCheckBox T="bool" @bind-Value="_saveGuest" Label="In Spielerliste speichern" Dense="true" Size="Size.Small" />
+            <MudCheckBox T="bool" @bind-Value="_saveGuest" Label="@(_private ? "In Spielerliste speichern (bei privaten Spielen aus)" : "In Spielerliste speichern")" Disabled="_private" Dense="true" Size="Size.Small" />
 
             <MudDivider Class="my-3" />
             <MudText Typo="Typo.subtitle2">Computergegner</MudText>
@@ -377,6 +378,18 @@
                 <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.SmartToy" OnClick="AddBot">Hinzufügen</MudButton>
             </div>
             <MudText Typo="Typo.caption" Class="mud-text-secondary">Ø = ungefährer 3-Dart-Average in X01. Der Computer spielt in jedem Modus mit passender Taktik.</MudText>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudPaper Class="pa-3 d-flex align-center flex-wrap gap-2" Elevation="1">
+            <MudIcon Icon="@(_private ? Icons.Material.Filled.VisibilityOff : Icons.Material.Outlined.Visibility)" Color="@(_private ? Color.Primary : Color.Default)" />
+            <MudSwitch T="bool" Value="_private" ValueChanged="SetPrivateAsync" Color="Color.Primary" Label="Privates Spiel – nicht speichern" />
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                @(_private
+                    ? "Das Spiel wird weder im Konto noch im Browser gespeichert und erscheint nicht in Verlauf oder Statistik. Neuladen der Seite beendet es."
+                    : "Spiele werden " + (Data.IsCloud ? "in deinem Konto" : "in diesem Browser") + " gespeichert.")
+            </MudText>
         </MudPaper>
     </MudItem>
 
@@ -423,6 +436,13 @@
     private bool _teamMode;
     private int _teamSize = 2;
     private bool _handicap;
+    private bool _private;
+
+    private async Task SetPrivateAsync(bool value)
+    {
+        _private = value;
+        await Ui.SetPrivateGamesAsync(value);
+    }
 
     private int MaxListPlayers => _teamMode ? GameEngine.MaxPlayers * _teamSize : GameEngine.MaxPlayers;
 
@@ -453,6 +473,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _private = Ui.PrivateGames;
         _last = await Store.GetAsync<LastSetup>(LastSetupKey) ?? new LastSetup();
 
         try
@@ -501,7 +522,7 @@
             return;
         }
 
-        if (_saveGuest)
+        if (_saveGuest && !_private)
         {
             try
             {
@@ -560,11 +581,18 @@
 
         try
         {
-            await Session.StartAsync(_settings, BuildPlayers());
+            await Session.StartAsync(_settings, BuildPlayers(), _private);
         }
         catch (ArgumentException ex)
         {
             Snackbar.Add(ex.Message, Severity.Error);
+            return;
+        }
+
+        // Private Spiele hinterlassen nichts im Browser – auch nicht die zuletzt verwendeten Spieler.
+        if (_private)
+        {
+            Navigation.NavigateTo("play");
             return;
         }
 
