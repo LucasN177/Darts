@@ -1,6 +1,15 @@
 namespace DartsApp.Services;
 
-/// <summary>Persistente UI-Einstellungen (Theme, Tempo der Computergegner).</summary>
+/// <summary>Wo die Hauptnavigation angezeigt wird.</summary>
+public enum NavigationStyle
+{
+    /// <summary>Seitenleiste links, auf kleinen Bildschirmen über das Menü-Symbol.</summary>
+    Drawer,
+    /// <summary>Leiste am unteren Bildschirmrand, mit dem Daumen erreichbar.</summary>
+    BottomBar
+}
+
+/// <summary>Persistente UI-Einstellungen (Theme, Navigation, Tempo der Computergegner) im localStorage.</summary>
 public sealed class UiState(LocalStore store)
 {
     private const string Key = "darts.ui";
@@ -11,6 +20,7 @@ public sealed class UiState(LocalStore store)
         public bool FastBots { get; set; }
         /// <summary>Neue Spiele standardmäßig privat starten (nur die Einstellung, keine Spieldaten).</summary>
         public bool PrivateGames { get; set; }
+        public NavigationStyle Navigation { get; set; } = NavigationStyle.Drawer;
     }
 
     private Data _data = new();
@@ -18,6 +28,8 @@ public sealed class UiState(LocalStore store)
     public bool DarkMode => _data.DarkMode;
     public bool FastBots => _data.FastBots;
     public bool PrivateGames => _data.PrivateGames;
+    public NavigationStyle Navigation => _data.Navigation;
+    public bool BottomNavigation => _data.Navigation == NavigationStyle.BottomBar;
 
     /// <summary>Pause vor dem ersten Wurf einer Computer-Aufnahme (ms).</summary>
     public int BotTurnDelay => FastBots ? 350 : 1100;
@@ -31,6 +43,24 @@ public sealed class UiState(LocalStore store)
     public Task ToggleDarkModeAsync()
     {
         _data.DarkMode = !_data.DarkMode;
+        return SaveAsync();
+    }
+
+    public Task SetDarkModeAsync(bool value)
+    {
+        _data.DarkMode = value;
+        return SaveAsync();
+    }
+
+    public Task SetNavigationAsync(NavigationStyle value)
+    {
+        _data.Navigation = value;
+        return SaveAsync();
+    }
+
+    public Task SetFastBotsAsync(bool value)
+    {
+        _data.FastBots = value;
         return SaveAsync();
     }
 
