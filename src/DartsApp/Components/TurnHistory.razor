@@ -29,8 +29,17 @@ else
                         <td>@(Engine.Settings.SetsToWin > 1 ? $"{turn.Set}.{turn.Leg}" : turn.Leg.ToString())</td>
                     }
                     <td>@turn.Round</td>
-                    <td>@Engine.Players[turn.PlayerIndex].Name</td>
-                    <td class="darts-cell">@string.Join("  ", turn.Darts.Select(d => d.ToString()))</td>
+                    <td>@(Engine.Players[turn.PlayerIndex].IsTeam ? Engine.ThrowerOf(turn).Name : Engine.Players[turn.PlayerIndex].Name)</td>
+                    <td class="darts-cell">
+                        @if (Engine.Settings.FastInput && !Engine.ThrowerOf(turn).IsBot)
+                        {
+                            <span class="mud-text-secondary">Summe@(turn.Note?.StartsWith("Checkout") == true ? $" · {turn.Darts.Count} Darts" : "")</span>
+                        }
+                        else
+                        {
+                            @string.Join("  ", turn.Darts.Select(d => d.ToString()))
+                        }
+                    </td>
                     <td class="text-right"><b>@(turn.Bust ? "–" : turn.Score.ToString())</b></td>
                     <td>
                         @if (turn.Note is not null)

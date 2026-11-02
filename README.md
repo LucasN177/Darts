@@ -45,6 +45,9 @@ werden mit Anmeldung in Supabase gespeichert, ohne Anmeldung lokal im Browser.
 **Teams:** In jedem Modus lassen sich Teams aus 2–4 Spielern bilden (auch gemischt mit Computergegnern); ein Team
 spielt auf einen gemeinsamen Spielstand, die Mitglieder werfen abwechselnd.
 **Handicap:** In X01 und Sudden Death kann jeder Spieler einen eigenen Startwert bekommen (z.B. 501 gegen 301).
+**Schnelleingabe (Fast Mode):** In X01 (Single In), Sudden Death, High Score, All Fives und den Checkout-Trainings
+lässt sich statt jedes Darts nur die Summe der Aufnahme eingeben; beim Checkout fragt die App nach der Dartanzahl.
+Intern wird die Summe in eine passende Dart-Kombination umgerechnet (`FastInput`), die Spiellogik bleibt dart-basiert.
 
 Alle Modi lassen sich allein oder mit bis zu 8 Spielern an einem Gerät spielen (Scram und Tic-Tac-Toe mit genau zwei) – auch gemischt mit
 **Computergegnern** in sechs Stufen (Anfänger Ø ~25 bis Weltklasse Ø ~100). Der Computer wirft auf einer

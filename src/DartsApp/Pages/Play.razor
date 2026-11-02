@@ -148,10 +148,18 @@ else
                 </MudPaper>
             }
 
-            <DartPad OnDart="ThrowAsync" OnUndo="Session.UndoAsync" CanUndo="@(engine.CanUndo && engine.HasHumanThrower)" Disabled="@(engine.IsFinished || engine.IsBotTurn)"
-                     Highlight="@(engine.IsFinished ? null : engine.RelevantSegments)" />
+            @if (Session.IsFastInput)
+            {
+                <FastPad Engine="engine" OnSubmit="ThrowTotalAsync" OnUndo="Session.UndoAsync" CanUndo="@(engine.CanUndo && engine.HasHumanThrower)"
+                         Disabled="@(engine.IsFinished || engine.IsBotTurn)" />
+            }
+            else
+            {
+                <DartPad OnDart="ThrowAsync" OnUndo="Session.UndoAsync" CanUndo="@(engine.CanUndo && engine.HasHumanThrower)" Disabled="@(engine.IsFinished || engine.IsBotTurn)"
+                         Highlight="@(engine.IsFinished ? null : engine.RelevantSegments)" />
+            }
 
-            @if (!engine.IsFinished && !engine.IsBotTurn)
+            @if (!engine.IsFinished && !engine.IsBotTurn && !Session.IsFastInput)
             {
                 <MudButton FullWidth="true" Variant="Variant.Outlined" Class="mt-2" StartIcon="@Icons.Material.Filled.SkipNext"
                            OnClick="Session.FinishTurnAsync">@(engine is GolfEngine ? "Stehen bleiben (letzter Treffer zählt)" : "Aufnahme beenden (Rest = Miss)")</MudButton>
@@ -193,8 +201,20 @@ else
     private async Task ThrowAsync(Dart dart)
     {
         await Session.ThrowAsync(dart);
-        // Die letzte Aufnahme ist nur dann abgeschlossen, wenn dieser Dart sie beendet hat.
-        if (Engine is { Settings.Mode: GameMode.X01 or GameMode.HighScore } e && e.Turns.Count > 0
+        Announce180();
+    }
+
+    private async Task<string?> ThrowTotalAsync(int total, int? checkoutDarts)
+    {
+        var error = await Session.ThrowTotalAsync(total, checkoutDarts);
+        if (error is null) Announce180();
+        return error;
+    }
+
+    private void Announce180()
+    {
+        // Die letzte Aufnahme ist nur dann abgeschlossen, wenn dieser Wurf sie beendet hat.
+        if (Engine is { Settings.Mode: GameMode.X01 or GameMode.SuddenDeath or GameMode.HighScore } e && e.Turns.Count > 0
             && e.Turns[^1] is { IsComplete: true, Bust: false, Score: 180 })
             Snackbar.Add("180!", Severity.Success);
     }

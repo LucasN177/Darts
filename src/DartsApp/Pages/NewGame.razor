@@ -264,6 +264,19 @@
                     break;
             }
 
+            @if (ModeInfo.SupportsFastInput)
+            {
+                var fastAvailable = ModeInfo.FastInputAvailable(_settings);
+                <MudDivider Class="my-3" />
+                <MudSwitch T="bool" Value="@(_settings.FastInput && fastAvailable)" ValueChanged="@(v => Update(s => s with { FastInput = v }))"
+                           Disabled="@(!fastAvailable)" Color="Color.Primary" Label="Schnelleingabe (Fast Mode)" />
+                <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">
+                    @(fastAvailable
+                        ? "Statt jeden Dart einzeln tippst du nur die Summe der Aufnahme (z.B. 100). Checkt die Summe aus, fragt die App, mit wie vielen Darts. Statistiken wie Average und 180er funktionieren weiter, Einzeltreffer werden nicht erfasst."
+                        : "Mit Double oder Master In nicht möglich – ob der Einstieg gültig war, lässt sich aus der Summe nicht ablesen.")
+                </MudText>
+            }
+
             <MudText Typo="Typo.caption" Class="mud-text-secondary mt-3 d-block">@_settings.Describe()</MudText>
         </MudPaper>
     </MudItem>
@@ -496,6 +509,17 @@
         SelectMode(Enum.TryParse<GameMode>(ModeName, true, out var mode) ? mode : _last.Mode);
     }
 
+    private string? _loadedModeName;
+
+    /// <summary>Wechsel zwischen /new/X01 und /new/Cricket usw. ohne neues Laden der Seite.</summary>
+    protected override void OnParametersSet()
+    {
+        // Läuft erst nach OnInitializedAsync; beim ersten Aufruf ist der Modus also schon gesetzt.
+        if (_loadedModeName == ModeName) return;
+        _loadedModeName = ModeName;
+        if (Enum.TryParse<GameMode>(ModeName, true, out var mode) && mode != _settings.Mode) SelectMode(mode);
+    }
+
     private void SelectMode(GameMode mode) =>
         _settings = _last.Settings.TryGetValue(mode, out var s) ? s with { Mode = mode } : GameSettings.DefaultFor(mode);
 
@@ -581,7 +605,8 @@
 
         try
         {
-            await Session.StartAsync(_settings, BuildPlayers(), _private);
+            var settings = _settings with { FastInput = _settings.FastInput && ModeInfo.FastInputAvailable(_settings) };
+            await Session.StartAsync(settings, BuildPlayers(), _private);
         }
         catch (ArgumentException ex)
         {

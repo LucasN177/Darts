@@ -89,6 +89,12 @@ public sealed record GameSettings
 {
     public GameMode Mode { get; init; } = GameMode.X01;
 
+    /// <summary>
+    /// Schnelleingabe (Fast Mode): pro Aufnahme wird nur die Summe eingegeben. Nur in Modi, in denen allein die
+    /// Summe zählt (siehe <c>GameModeInfo.SupportsFastInput</c>).
+    /// </summary>
+    public bool FastInput { get; init; }
+
     // X01
     public int StartScore { get; init; } = 501;
     public InOutRule InRule { get; init; } = InOutRule.Single;
@@ -184,7 +190,9 @@ public sealed record GameSettings
     };
 
     /// <summary>Kurzbeschreibung der Einstellungen, z.B. "501 · Double Out · First to 3 Legs".</summary>
-    public string Describe() => Mode switch
+    public string Describe() => FastInput ? DescribeRules() + " · Schnelleingabe" : DescribeRules();
+
+    private string DescribeRules() => Mode switch
     {
         GameMode.X01 => string.Join(" · ", new[]
         {

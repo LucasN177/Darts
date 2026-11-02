@@ -177,6 +177,8 @@ public sealed class CheckoutTrainingEngine : GameEngine
         return PointsOf(a) == PointsOf(b) && _state[a].HighestTarget == _state[b].HighestTarget ? null : a;
     }
 
+    public override (int Remaining, InOutRule OutRule)? CheckoutTarget => (_state[CurrentPlayer].Remaining, Settings.OutRule);
+
     public override Dart BotAim() =>
         CheckoutCalculator.BestDart(_state[CurrentPlayer].Remaining, DartsLeftInTurn, Settings.OutRule);
 
