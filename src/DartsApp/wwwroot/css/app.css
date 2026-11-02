@@ -53,7 +53,7 @@
 }
 
 html.theme-light {
-    --splash-bg: #f4f4f6;
+    --splash-bg: #eef0f4;
     --splash-glow: rgba(198, 40, 40, .14);
     --splash-text: #1b1b1f;
     --splash-muted: rgba(27, 27, 31, .6);
@@ -481,3 +481,49 @@ html, body {
 .pad-btn.special.checkout { background: var(--mud-palette-secondary); color: #fff; }
 
 .fast-undo { min-height: 44px; }
+
+/* ---------- Light Mode ----------
+   Der Dark Mode nutzt die Standardwerte oben; hier nur Anpassungen für den hellen Modus:
+   flachere Karten mit feiner Kontur statt kräftiger Schatten, klar abgesetzte Tasten. */
+.app-light .mud-elevation-1,
+.app-light .mud-elevation-2 {
+    box-shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 0 0 1px rgba(16, 24, 40, .07);
+}
+
+.app-light .mud-elevation-4 {
+    box-shadow: 0 4px 12px rgba(16, 24, 40, .08), 0 0 0 1px rgba(16, 24, 40, .07);
+}
+
+.app-light .mud-drawer { border-right: 1px solid rgba(16, 24, 40, .08); }
+
+.app-light .hero {
+    background:
+        radial-gradient(circle at 100% 0%, rgba(198, 40, 40, .10), transparent 55%),
+        linear-gradient(180deg, #ffffff, #fbf7f7);
+}
+
+.app-light .mode-tile:hover { box-shadow: 0 4px 12px rgba(16, 24, 40, .10), 0 0 0 1px rgba(16, 24, 40, .08); }
+
+.app-light .pad-btn {
+    box-shadow: 0 1px 2px rgba(16, 24, 40, .08), inset 0 0 0 1px rgba(16, 24, 40, .10);
+}
+
+.app-light .pad-btn:hover:not(:disabled):not(.active):not(.bull):not(.ok):not(.checkout) { background: #f4f5f7; }
+.app-light .pad-btn:disabled { opacity: .45; }
+.app-light .pad-btn.num.relevant,
+.app-light .pad-btn.special.relevant:not(.bull) { box-shadow: inset 0 0 0 2px var(--mud-palette-secondary); }
+.app-light .pad-btn.mod.active,
+.app-light .pad-btn.special.bull,
+.app-light .pad-btn.special.ok,
+.app-light .pad-btn.special.checkout { box-shadow: 0 1px 2px rgba(16, 24, 40, .15); }
+
+.app-light .turn-slot,
+.app-light .scram-field,
+.app-light .fast-checkout { background: #f1f2f5; }
+
+.app-light .fast-display { box-shadow: inset 0 0 0 1px rgba(16, 24, 40, .10); }
+
+.app-light .ttt-cell { box-shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 0 0 1px rgba(16, 24, 40, .07); }
+.app-light .ttt-cell.winning { background: #f1f2f5; }
+
+.app-light .cricket-board .active { background: rgba(198, 40, 40, .07); }
