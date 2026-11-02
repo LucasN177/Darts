@@ -68,7 +68,17 @@ public abstract class GameEngine
     /// <summary>True, wenn der Computer seine Aufnahme jetzt freiwillig beenden möchte (z.B. Golf).</summary>
     public virtual bool BotWantsToEndTurn => false;
 
-    public bool IsBotTurn => !IsFinished && Players[CurrentPlayer].IsBot;
+    public bool IsBotTurn => !IsFinished && CurrentThrower.IsBot;
+
+    /// <summary>Wer gerade wirft: der Spieler selbst oder bei Teams das Mitglied, das an der Reihe ist.</summary>
+    public PlayerRef CurrentThrower => _currentTurn is { } turn
+        ? ThrowerOf(turn)
+        : Players[CurrentPlayer].ThrowerFor(_turns.Count(t => t.PlayerIndex == CurrentPlayer));
+
+    public PlayerRef ThrowerOf(Turn turn) => Players[turn.PlayerIndex].ThrowerFor(turn.Member);
+
+    /// <summary>True, wenn mindestens ein Mensch mitspielt (allein oder in einem Team).</summary>
+    public bool HasHumanThrower => Players.SelectMany(p => p.IsTeam ? p.Members! : [p]).Any(p => !p.IsBot);
 
     /// <summary>Statuszeile über dem Scoreboard, z.B. "Set 1 · Leg 2 · Runde 4".</summary>
     public virtual string Status => $"Runde {Round}";
@@ -151,7 +161,9 @@ public abstract class GameEngine
 
         if (_currentTurn is null)
         {
-            _currentTurn = new Turn(CurrentPlayer, Round, Leg, Set);
+            var turnNumber = _turns.Count(t => t.PlayerIndex == CurrentPlayer);
+            var members = Players[CurrentPlayer].Members?.Count ?? 1;
+            _currentTurn = new Turn(CurrentPlayer, Round, Leg, Set, turnNumber % members);
             _turns.Add(_currentTurn);
             Message = null;
             OnTurnStarted(_currentTurn);
@@ -180,6 +192,13 @@ public abstract class GameEngine
             _turnsInRound = 0;
             Round++;
             OnRoundCompleted(Round - 1);
+
+            // Der Modus hat am Rundenende ein neues Leg gestartet (z.B. Aufnahmelimit): Position steht schon.
+            if (_legRestarted)
+            {
+                _legRestarted = false;
+                return;
+            }
         }
 
         // Ausgeschiedene Spieler überspringen.
@@ -268,8 +287,18 @@ public abstract class GameEngine
             Name = Players[player].Name,
             DartsThrown = darts,
             HighestTurn = turns.Count == 0 ? 0 : turns.Max(t => t.Score),
-            Extra = Players[player].Bot is { } bot ? new() { ["bot"] = (int)bot } : new()
+            Extra = BaseExtra(Players[player])
         };
+    }
+
+    /// <summary>Markierungen für die Statistik: Computer- und Team-Ergebnisse zählen nicht als Spielerwerte.</summary>
+    private static Dictionary<string, double> BaseExtra(PlayerRef player)
+    {
+        var extra = new Dictionary<string, double>();
+        if (player.Bot is { } bot) extra["bot"] = (int)bot;
+        if (player.IsTeam) extra["team"] = player.Members!.Count;
+        if (player.StartScore is { } start) extra["handicap"] = start;
+        return extra;
     }
 
     protected static List<KeyValuePair<string, string>> Details(params (string Label, string Value)[] items) =>

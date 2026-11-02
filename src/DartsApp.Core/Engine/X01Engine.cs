@@ -20,6 +20,7 @@ public sealed class X01Engine : GameEngine
     private State[] _state = [];
     private int _legStarter;
     private int _turnStartRemaining;
+    private bool _timedOut;
 
     public X01Engine(GameSettings settings, IReadOnlyList<PlayerRef> players) : base(settings, players)
     {
@@ -35,15 +36,19 @@ public sealed class X01Engine : GameEngine
     {
         _state = Enumerable.Range(0, PlayerCount).Select(_ => new State()).ToArray();
         _legStarter = 0;
+        _timedOut = false;
         ResetLeg();
     }
 
+    /// <summary>Startwert eines Spielers – mit Handicap individuell, sonst aus den Einstellungen.</summary>
+    public int StartScoreOf(int player) => Players[player].StartScore ?? Settings.StartScore;
+
     private void ResetLeg()
     {
-        foreach (var s in _state)
+        for (var i = 0; i < PlayerCount; i++)
         {
-            s.Remaining = Settings.StartScore;
-            s.Started = Settings.InRule == InOutRule.Single;
+            _state[i].Remaining = StartScoreOf(i);
+            _state[i].Started = Settings.InRule == InOutRule.Single;
         }
     }
 
@@ -71,7 +76,7 @@ public sealed class X01Engine : GameEngine
         if (bust)
         {
             p.Remaining = _turnStartRemaining;
-            if (Settings.InRule != InOutRule.Single && _turnStartRemaining == Settings.StartScore)
+            if (Settings.InRule != InOutRule.Single && _turnStartRemaining == StartScoreOf(turn.PlayerIndex))
                 p.Started = false;
             turn.Bust = true;
             turn.Score = 0;
@@ -99,7 +104,7 @@ public sealed class X01Engine : GameEngine
         _ => !dart.IsMiss
     };
 
-    private void WinLeg(int player)
+    private void WinLeg(int player, string? reason = null)
     {
         var p = _state[player];
         p.LegsInSet++;
@@ -108,7 +113,7 @@ public sealed class X01Engine : GameEngine
 
         if (p.LegsInSet < Settings.LegsToWin)
         {
-            SetMessage($"Leg an {name} ({_turnStartRemaining} Checkout)");
+            SetMessage(reason ?? $"Leg an {name} ({_turnStartRemaining} Checkout)");
             NextLeg(newSet: false);
             return;
         }
@@ -125,6 +130,26 @@ public sealed class X01Engine : GameEngine
         NextLeg(newSet: true);
     }
 
+    /// <summary>
+    /// Sudden Death: Ist das Aufnahmelimit erreicht, gewinnt der Spieler mit dem kleinsten Rest das Leg.
+    /// Allein endet das Spiel ohne Sieg.
+    /// </summary>
+    protected override void OnRoundCompleted(int round)
+    {
+        if (Settings.TurnLimit <= 0 || round < Settings.TurnLimit) return;
+
+        if (PlayerCount == 1)
+        {
+            _timedOut = true;
+            FinishGame(null);
+            SetMessage($"Zeit abgelaufen – {_state[0].Remaining} Rest nach {Settings.TurnLimit} Aufnahmen");
+            return;
+        }
+
+        var best = Enumerable.Range(0, PlayerCount).OrderBy(i => _state[i].Remaining).First();
+        WinLeg(best, $"Zeit abgelaufen – Leg an {Players[best].Name} (Rest {_state[best].Remaining})");
+    }
+
     private void NextLeg(bool newSet)
     {
         ResetLeg();
@@ -139,7 +164,7 @@ public sealed class X01Engine : GameEngine
             var parts = new List<string>();
             if (Settings.SetsToWin > 1) parts.Add($"Set {Set}");
             if (Settings.LegsToWin > 1 || Settings.SetsToWin > 1) parts.Add($"Leg {Leg}");
-            parts.Add($"Runde {Round}");
+            parts.Add(Settings.TurnLimit > 0 ? $"Aufnahme {Math.Min(Round, Settings.TurnLimit)} / {Settings.TurnLimit}" : $"Runde {Round}");
             return string.Join(" · ", parts);
         }
     }
@@ -214,6 +239,7 @@ public sealed class X01Engine : GameEngine
             r.LegsWon = p.LegsTotal;
             r.SetsWon = p.Sets;
             r.Extra["remaining"] = p.Remaining;
+            if (Settings.TurnLimit > 0) r.Extra["timed_out"] = _timedOut ? 1 : 0;
             results.Add(r);
         }
 

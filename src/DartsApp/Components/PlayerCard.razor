@@ -43,6 +43,10 @@
         }
     </div>
     <MudText Typo="Typo.caption" Class="mud-text-secondary">@View.PrimaryLabel</MudText>
+    @if (Thrower is not null)
+    {
+        <MudText Typo="Typo.caption" Class="d-block"><MudIcon Icon="@Icons.Material.Filled.SportsHandball" Size="Size.Small" Style="vertical-align:middle" /> @Thrower wirft</MudText>
+    }
     <div class="player-details mt-1">
         @foreach (var d in View.Details)
         {
@@ -59,4 +63,6 @@
     [Parameter, EditorRequired] public PlayerView View { get; set; } = default!;
     [Parameter] public bool IsWinner { get; set; }
     [Parameter] public bool IsBot { get; set; }
+    /// <summary>Bei Teams: wer gerade wirft.</summary>
+    [Parameter] public string? Thrower { get; set; }
 }

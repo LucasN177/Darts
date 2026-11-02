@@ -94,9 +94,9 @@ public static class StatsCalculator
 
     public static double KeyValue(GameMode mode, PlayerResult r) => mode switch
     {
-        GameMode.X01 or GameMode.HighScore or GameMode.Cricket => r.Average,
+        GameMode.X01 or GameMode.SuddenDeath or GameMode.HighScore or GameMode.Cricket => r.Average,
         GameMode.AroundTheClock => r.DartsThrown,
-        GameMode.Checkout121 or GameMode.CheckoutRoulette => r.CheckoutsHit,
+        GameMode.Checkout121 or GameMode.CheckoutRoulette or GameMode.BigFinish => r.CheckoutsHit,
         GameMode.ScoringDrill => Math.Round(r.Extra.GetValueOrDefault("hit_rate") * 100, 1),
         _ => r.Score
     };
@@ -106,10 +106,10 @@ public static class StatsCalculator
 
     public static string KeyLabel(GameMode mode) => mode switch
     {
-        GameMode.X01 or GameMode.HighScore => "3-Dart-Average",
+        GameMode.X01 or GameMode.SuddenDeath or GameMode.HighScore => "3-Dart-Average",
         GameMode.Cricket => "Marks pro Runde",
         GameMode.AroundTheClock => "Darts",
-        GameMode.Checkout121 or GameMode.CheckoutRoulette => "Checkouts",
+        GameMode.Checkout121 or GameMode.CheckoutRoulette or GameMode.BigFinish => "Checkouts",
         GameMode.Golf => "Schläge",
         GameMode.ScoringDrill => "Trefferquote in %",
         GameMode.Football => "Tore",

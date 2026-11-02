@@ -4,24 +4,42 @@ namespace DartsApp.Core.Models;
 /// Ein Spieler in einem Spiel. Id ist null für spontane Gastspieler und Computergegner;
 /// Bot ist gesetzt, wenn der Computer für diesen Spieler wirft.
 /// </summary>
-public sealed record PlayerRef(Guid? Id, string Name, BotLevel? Bot = null)
+/// <param name="Members">Bei einem Team die Mitglieder in Wurfreihenfolge; das Team zählt im Spiel als ein Spieler.</param>
+/// <param name="StartScore">Handicap: eigener Startwert in X01 (null = Startwert aus den Einstellungen).</param>
+public sealed record PlayerRef(Guid? Id, string Name, BotLevel? Bot = null, IReadOnlyList<PlayerRef>? Members = null, int? StartScore = null)
 {
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsBot => Bot is not null;
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsTeam => Members is { Count: > 0 };
+
+    /// <summary>Wer in der n-ten Aufnahme dieses Spielers wirft (bei Teams reihum, sonst der Spieler selbst).</summary>
+    public PlayerRef ThrowerFor(int turnNumber) => IsTeam ? Members![turnNumber % Members.Count] : this;
+
+    public static PlayerRef Team(IReadOnlyList<PlayerRef> members, int? startScore = null)
+    {
+        if (members.Count < 2) throw new ArgumentException("Ein Team braucht mindestens zwei Mitglieder.", nameof(members));
+        if (members.Any(m => m.IsTeam)) throw new ArgumentException("Teams können keine Teams enthalten.", nameof(members));
+        return new PlayerRef(null, string.Join(" & ", members.Select(m => m.Name)), null, members.ToList(), startScore);
+    }
 }
 
 /// <summary>Eine Aufnahme (bis zu drei Darts) eines Spielers.</summary>
 public sealed class Turn
 {
-    public Turn(int playerIndex, int round, int leg, int set)
+    public Turn(int playerIndex, int round, int leg, int set, int member = 0)
     {
         PlayerIndex = playerIndex;
         Round = round;
         Leg = leg;
         Set = set;
+        Member = member;
     }
 
     public int PlayerIndex { get; }
+    /// <summary>Bei Teams: Index des werfenden Mitglieds.</summary>
+    public int Member { get; }
     public int Round { get; }
     public int Leg { get; }
     public int Set { get; }

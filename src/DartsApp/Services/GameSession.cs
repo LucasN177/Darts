@@ -6,7 +6,8 @@ namespace DartsApp.Services;
 
 /// <summary>
 /// Das aktuell laufende Spiel. Wird nach jedem Wurf im localStorage gesichert, damit ein
-/// Neuladen der Seite oder ein leerer Akku das Spiel nicht beendet.
+/// Neuladen der Seite oder ein leerer Akku das Spiel nicht beendet. Private Spiele werden
+/// nirgends gespeichert – weder im Konto noch im Browser – und enden beim Neuladen.
 /// </summary>
 public sealed class GameSession(LocalStore store, DataService data, UiState ui)
 {
@@ -27,6 +28,8 @@ public sealed class GameSession(LocalStore store, DataService data, UiState ui)
     public DateTimeOffset StartedAt { get; private set; }
     public bool IsSaved { get; private set; }
     public bool IsSaving { get; private set; }
+    /// <summary>Privates Spiel: kein Zwischenstand im Browser, kein Ergebnis im Verlauf.</summary>
+    public bool IsPrivate { get; private set; }
     public string? SaveError { get; private set; }
 
     public bool HasActiveGame => Engine is { IsFinished: false };
@@ -52,7 +55,7 @@ public sealed class GameSession(LocalStore store, DataService data, UiState ui)
         }
     }
 
-    public async Task StartAsync(GameSettings settings, IReadOnlyList<PlayerRef> players)
+    public async Task StartAsync(GameSettings settings, IReadOnlyList<PlayerRef> players, bool isPrivate = false)
     {
         StopBots();
         // Neuer Seed je Spiel (z.B. Zahlenvergabe bei Killer); er wird mit den Einstellungen gespeichert.
@@ -62,6 +65,8 @@ public sealed class GameSession(LocalStore store, DataService data, UiState ui)
         StartedAt = DateTimeOffset.UtcNow;
         IsSaved = false;
         SaveError = null;
+        IsPrivate = isPrivate;
+        if (isPrivate) await store.RemoveAsync(ActiveGameKey); // evtl. alten Zwischenstand entfernen
         await PersistAsync();
         Changed?.Invoke();
         EnsureBotsPlaying();
@@ -72,7 +77,7 @@ public sealed class GameSession(LocalStore store, DataService data, UiState ui)
     {
         if (Engine is null) return Task.CompletedTask;
         var players = Engine.Players.Skip(1).Append(Engine.Players[0]).ToList();
-        return StartAsync(Engine.Settings, players);
+        return StartAsync(Engine.Settings, players, IsPrivate);
     }
 
     /// <summary>Wurf eines Menschen. Während ein Computergegner dran ist, wird die Eingabe ignoriert.</summary>
@@ -91,9 +96,9 @@ public sealed class GameSession(LocalStore store, DataService data, UiState ui)
         {
             while (e.Turns.Count > 0)
             {
-                var thrower = e.Turns[^1].PlayerIndex;
+                var thrower = e.ThrowerOf(e.Turns[^1]);
                 e.Undo();
-                if (!e.Players[thrower].IsBot) break;
+                if (!thrower.IsBot) break;
             }
         });
     }
@@ -116,7 +121,7 @@ public sealed class GameSession(LocalStore store, DataService data, UiState ui)
         await PersistAsync();
         Changed?.Invoke();
 
-        if (Engine.IsFinished && !IsSaved)
+        if (Engine.IsFinished && !IsSaved && !IsPrivate)
             await SaveResultAsync();
     }
 
@@ -152,7 +157,7 @@ public sealed class GameSession(LocalStore store, DataService data, UiState ui)
                 await Task.Delay(delay, cts.Token);
                 if (cts.IsCancellationRequested || Engine != engine || !engine.IsBotTurn) break;
 
-                var level = engine.Players[engine.CurrentPlayer].Bot!.Value;
+                var level = engine.CurrentThrower.Bot!.Value;
                 await MutateCoreAsync(e => Bot.Step(e, level, Random.Shared));
             }
         }
@@ -168,7 +173,7 @@ public sealed class GameSession(LocalStore store, DataService data, UiState ui)
 
     public async Task SaveResultAsync()
     {
-        if (Engine is null || IsSaving) return;
+        if (Engine is null || IsSaving || IsPrivate) return;
         IsSaving = true;
         SaveError = null;
         Changed?.Invoke();
@@ -196,6 +201,7 @@ public sealed class GameSession(LocalStore store, DataService data, UiState ui)
         StopBots();
         Engine = null;
         IsSaved = false;
+        IsPrivate = false;
         SaveError = null;
         await store.RemoveAsync(ActiveGameKey);
         Changed?.Invoke();
@@ -219,7 +225,7 @@ public sealed class GameSession(LocalStore store, DataService data, UiState ui)
 
     private Task PersistAsync()
     {
-        if (Engine is null) return Task.CompletedTask;
+        if (Engine is null || IsPrivate) return Task.CompletedTask;
         return store.SetAsync(ActiveGameKey, new Snapshot
         {
             Id = GameId,

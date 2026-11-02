@@ -23,6 +23,12 @@ else
         <div>
             <MudText Typo="Typo.h5">@GameModes.Get(engine.Settings.Mode).Name</MudText>
             <MudText Typo="Typo.caption" Class="mud-text-secondary">@engine.Settings.Describe() · @engine.Status</MudText>
+            @if (Session.IsPrivate)
+            {
+                <MudTooltip Text="Wird nirgends gespeichert – Neuladen der Seite beendet das Spiel">
+                    <MudChip T="string" Size="Size.Small" Icon="@Icons.Material.Filled.VisibilityOff" Variant="Variant.Outlined" Class="ml-0">Privat</MudChip>
+                </MudTooltip>
+            }
         </div>
         <MudSpacer />
         <MudMenu Icon="@Icons.Material.Filled.MoreVert" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
@@ -46,7 +52,11 @@ else
                 <div>
                     <MudText Typo="Typo.h5">@(engine.Winner is { } w ? $"{engine.Players[w].Name} gewinnt!" : "Spiel beendet")</MudText>
                     <MudText Typo="Typo.body2" Class="mud-text-secondary">
-                        @if (Session.IsSaving)
+                        @if (Session.IsPrivate)
+                        {
+                            <span>Privates Spiel – nicht gespeichert.</span>
+                        }
+                        else if (Session.IsSaving)
                         {
                             <span>Wird gespeichert …</span>
                         }
@@ -98,7 +108,7 @@ else
             <div class="player-grid @(engine.PlayerCount == 1 ? "single" : "")">
                 @for (var i = 0; i < engine.PlayerCount; i++)
                 {
-                    <PlayerCard View="engine.GetView(i)" IsWinner="@(engine.Winner == i)" IsBot="@engine.Players[i].IsBot" />
+                    <PlayerCard View="engine.GetView(i)" IsWinner="@(engine.Winner == i)" IsBot="@engine.Players[i].IsBot" Thrower="@(engine.Players[i].IsTeam && !engine.IsFinished && i == engine.CurrentPlayer ? engine.CurrentThrower.Name : null)" />
                 }
             </div>
         </MudItem>
@@ -111,11 +121,11 @@ else
                         @if (engine.IsBotTurn)
                         {
                             <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Secondary" Class="mr-2" />
-                            <MudText Typo="Typo.subtitle1"><b>@engine.Players[engine.CurrentPlayer].Name</b> wirft …</MudText>
+                            <MudText Typo="Typo.subtitle1"><b>@ThrowerLabel(engine)</b> wirft …</MudText>
                         }
                         else
                         {
-                            <MudText Typo="Typo.subtitle1"><b>@engine.Players[engine.CurrentPlayer].Name</b> ist dran</MudText>
+                            <MudText Typo="Typo.subtitle1"><b>@ThrowerLabel(engine)</b> ist dran</MudText>
                         }
                         <MudSpacer />
                         <MudText Typo="Typo.h6">@(engine.CurrentTurn?.Score ?? 0)</MudText>
@@ -138,7 +148,7 @@ else
                 </MudPaper>
             }
 
-            <DartPad OnDart="ThrowAsync" OnUndo="Session.UndoAsync" CanUndo="@(engine.CanUndo && engine.Players.Any(p => !p.IsBot))" Disabled="@(engine.IsFinished || engine.IsBotTurn)"
+            <DartPad OnDart="ThrowAsync" OnUndo="Session.UndoAsync" CanUndo="@(engine.CanUndo && engine.HasHumanThrower)" Disabled="@(engine.IsFinished || engine.IsBotTurn)"
                      Highlight="@(engine.IsFinished ? null : engine.RelevantSegments)" />
 
             @if (!engine.IsFinished && !engine.IsBotTurn)
@@ -162,6 +172,13 @@ else
 
 @code {
     private GameEngine? Engine => Session.Engine;
+
+    /// <summary>Name des Werfers; bei Teams mit Teamname, z.B. "Anna (Anna & Ben)".</summary>
+    private static string ThrowerLabel(GameEngine engine)
+    {
+        var player = engine.Players[engine.CurrentPlayer];
+        return player.IsTeam ? $"{engine.CurrentThrower.Name} ({player.Name})" : player.Name;
+    }
 
     protected override void OnInitialized()
     {

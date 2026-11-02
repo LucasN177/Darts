@@ -4,25 +4,53 @@
 
 <MudText Typo="Typo.h4" Class="mb-4">Spielmodi &amp; Regeln</MudText>
 
-<MudExpansionPanels MultiExpansion="true" Elevation="1">
-    @foreach (var info in GameModes.All)
-    {
-        <MudExpansionPanel>
-            <TitleContent>
-                <div class="d-flex align-center">
-                    <MudText Typo="Typo.subtitle1"><b>@info.Name</b></MudText>
-                    <MudText Typo="Typo.caption" Class="mud-text-secondary ml-3">@info.Short</MudText>
-                </div>
-            </TitleContent>
-            <ChildContent>
-                <MudText Typo="Typo.body1" Class="mb-2">@info.Description</MudText>
-                <MudText Typo="Typo.body2">@info.Rules</MudText>
-                <MudButton Href="@($"new/{info.Mode}")" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Class="mt-3"
-                           StartIcon="@Icons.Material.Filled.PlayArrow">@info.Name spielen</MudButton>
-            </ChildContent>
-        </MudExpansionPanel>
-    }
-</MudExpansionPanels>
+@foreach (var group in GameModes.All.GroupBy(m => m.Training))
+{
+    <MudText Typo="Typo.h6" Class="mb-2 mt-4">@(group.Key ? "Training" : "Spiele") (@group.Count())</MudText>
+    <MudExpansionPanels MultiExpansion="true" Elevation="1">
+        @foreach (var info in group)
+        {
+            <MudExpansionPanel>
+                <TitleContent>
+                    <div class="d-flex align-center flex-wrap">
+                        <MudText Typo="Typo.subtitle1"><b>@info.Name</b></MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary ml-3">@info.Short</MudText>
+                        @if (info.MinPlayers > 1)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Class="ml-2">
+                                @(info.MinPlayers == info.MaxPlayers ? $"genau {info.MinPlayers} Spieler" : $"ab {info.MinPlayers} Spielern")
+                            </MudChip>
+                        }
+                    </div>
+                </TitleContent>
+                <ChildContent>
+                    <MudText Typo="Typo.body1" Class="mb-2">@info.Description</MudText>
+                    <MudText Typo="Typo.body2">@info.Rules</MudText>
+                    <MudButton Href="@($"new/{info.Mode}")" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Class="mt-3"
+                               StartIcon="@Icons.Material.Filled.PlayArrow">@info.Name spielen</MudButton>
+                </ChildContent>
+            </MudExpansionPanel>
+        }
+    </MudExpansionPanels>
+}
+
+<MudPaper Class="pa-4 mt-4" Elevation="1">
+    <MudText Typo="Typo.h6">Teams &amp; Handicap</MudText>
+    <MudText Typo="Typo.body2" Class="mb-2">
+        <b>Teams:</b> Unter „Neues Spiel“ den Schalter <b>Teams</b> aktivieren und die Teamgröße wählen (z.B. 2 für Doppel).
+        Die Teams werden in der Reihenfolge der Spielerliste gebildet. Ein Team spielt auf einen gemeinsamen Spielstand,
+        die Mitglieder werfen abwechselnd – auch gemischt mit Computergegnern. Teams funktionieren in allen Spielmodi.
+    </MudText>
+    <MudText Typo="Typo.body2">
+        <b>Handicap:</b> In X01 und Sudden Death kann jeder Spieler einen eigenen Startwert bekommen (z.B. 501 gegen 301),
+        damit unterschiedlich starke Spieler ein ausgeglichenes Spiel haben. Der Startwert gilt für jedes Leg.
+    </MudText>
+    <MudText Typo="Typo.body2" Class="mt-2">
+        <b>Privates Spiel:</b> Mit dem Schalter „Privates Spiel – nicht speichern“ wird ein Spiel weder im Konto noch im
+        Browser gespeichert – auch kein Zwischenstand und keine neuen Gäste in der Spielerliste. Es taucht nicht in Verlauf
+        oder Statistik auf; ein Neuladen der Seite beendet es.
+    </MudText>
+</MudPaper>
 
 <MudPaper Class="pa-4 mt-4" Elevation="1">
     <MudText Typo="Typo.h6">Eingabe</MudText>
