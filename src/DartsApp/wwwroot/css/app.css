@@ -578,3 +578,19 @@ html, body {
 .bottom-nav-menu > .mud-menu-activator { display: flex; flex: 1 1 0; min-width: 0; }
 
 .layout-bottom-nav .mud-main-content { padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
+
+/* ---------- App-Leiste: Namenszug unter "Darts" ----------
+   Absolut positioniert, damit Höhe und Lage von Logo und Titel unverändert bleiben. */
+.brand-title { position: relative; display: inline-block; }
+
+.brand-by {
+    position: absolute;
+    left: 1.1em;
+    top: calc(100% - 7px);
+    font-size: .62rem;
+    line-height: 1;
+    letter-spacing: .04em;
+    white-space: nowrap;
+    opacity: .65;
+    pointer-events: none;
+}
