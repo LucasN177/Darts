@@ -101,6 +101,39 @@ public static class FastInput
             : TurnTotalResult.Fail("Diese Summe lässt sich nicht als Bust darstellen.");
     }
 
+    /// <summary>Bust-Darts je (Rest, Ausstieg); null = bei diesem Rest kann man sich nicht überwerfen.</summary>
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(int, InOutRule), IReadOnlyList<Dart>?> BustCache = new();
+
+    /// <summary>True, wenn man sich beim aktuellen Rest überhaupt überwerfen kann (für den Bust-Button).</summary>
+    public static bool CanBust(GameEngine engine) =>
+        engine.CheckoutTarget is { } target && AnyBust(target.Remaining, target.OutRule) is not null;
+
+    /// <summary>
+    /// Bust ohne bekannte Summe (Bust-Button): Die Aufnahme wird als Bust mit drei Darts verbucht –
+    /// Fehlwürfe zuerst, dann der kürzeste Weg, der sich überwirft. Der Rest bleibt dadurch unverändert.
+    /// </summary>
+    public static TurnTotalResult Bust(GameEngine engine)
+    {
+        if (engine.CheckoutTarget is not { } target || AnyBust(target.Remaining, target.OutRule) is not { } bust)
+            return TurnTotalResult.Fail("Bei diesem Rest ist kein Bust möglich.");
+        var darts = Enumerable.Repeat(Dart.Miss, 3 - bust.Count).Concat(bust).ToList();
+        return new TurnTotalResult(darts, TurnTotalKind.Bust);
+    }
+
+    private static IReadOnlyList<Dart>? AnyBust(int remaining, InOutRule outRule) =>
+        BustCache.GetOrAdd((remaining, outRule), key =>
+        {
+            IReadOnlyList<Dart>? shortest = null;
+            // Wer weniger als Rest − 1 wirft, bleibt bei mindestens 2 Rest – das ist nie ein Bust.
+            for (var total = Math.Max(1, key.Item1 - 1); total <= MaxTotal; total++)
+            {
+                if (!IsPossible(total) || BustDarts(total, key.Item1, key.Item2) is not { } darts) continue;
+                if (shortest is null || darts.Count < shortest.Count) shortest = darts;
+                if (shortest.Count == 1) break;
+            }
+            return shortest;
+        });
+
     /// <summary>Drei Darts mit genau dieser Summe (größter Wert zuerst, z.B. 100 = T20 D20 0).</summary>
     public static IReadOnlyList<Dart> Decompose(int total) =>
         Combinations(total).FirstOrDefault() ?? throw new ArgumentOutOfRangeException(nameof(total));

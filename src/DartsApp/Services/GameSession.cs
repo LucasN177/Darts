@@ -95,7 +95,18 @@ public sealed class GameSession(LocalStore store, DataService data, UiState ui)
     public async Task<string?> ThrowTotalAsync(int total, int? checkoutDarts = null)
     {
         if (Engine is not { } engine || IsBotTurn || engine.IsFinished) return null;
-        var result = FastInput.ToDarts(engine, total, checkoutDarts);
+        return await ApplyFastAsync(FastInput.ToDarts(engine, total, checkoutDarts));
+    }
+
+    /// <summary>Schnelleingabe: Aufnahme als Bust verbuchen, ohne die geworfene Summe zu kennen.</summary>
+    public async Task<string?> BustAsync()
+    {
+        if (Engine is not { } engine || IsBotTurn || engine.IsFinished) return null;
+        return await ApplyFastAsync(FastInput.Bust(engine));
+    }
+
+    private async Task<string?> ApplyFastAsync(TurnTotalResult result)
+    {
         if (!result.IsValid) return result.Error;
 
         await MutateAsync(e =>

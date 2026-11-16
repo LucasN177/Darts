@@ -98,6 +98,41 @@ public class FastInputTests
         }
     }
 
+    [Theory]
+    [InlineData(InOutRule.Double)]
+    [InlineData(InOutRule.Single)]
+    [InlineData(InOutRule.Master)]
+    public void BustButton_KeepsRemaining_WithThreeDarts(InOutRule outRule)
+    {
+        for (var rem = 1; rem <= 200; rem++)
+        {
+            var e = X01(start: rem, outRule: outRule);
+            if (!FastInput.CanBust(e))
+            {
+                Assert.False(FastInput.Bust(e).IsValid);
+                continue;
+            }
+            var result = FastInput.Bust(e);
+            Assert.Equal(TurnTotalKind.Bust, result.Kind);
+            Assert.Equal(3, result.Darts.Count);
+            Apply(e, result);
+            Assert.False(e.IsFinished, $"Rest {rem}");
+            Assert.Equal(rem, e.RemainingOf(0));
+            Assert.True(e.Turns[0].Bust, $"Rest {rem}");
+            Assert.Equal(0, e.Turns[0].Score);
+        }
+    }
+
+    [Theory]
+    [InlineData(2, InOutRule.Double, true)]
+    [InlineData(170, InOutRule.Double, true)]
+    [InlineData(181, InOutRule.Double, true)]   // 180 → Rest 1
+    [InlineData(182, InOutRule.Double, false)]
+    [InlineData(180, InOutRule.Single, false)]  // mehr als 180 geht nicht
+    [InlineData(501, InOutRule.Double, false)]
+    public void BustButton_OnlyWhenBustIsPossible(int remaining, InOutRule outRule, bool expected) =>
+        Assert.Equal(expected, FastInput.CanBust(X01(start: remaining, outRule: outRule)));
+
     [Fact]
     public void Catch40_UsesCheckoutDartsForPoints()
     {
