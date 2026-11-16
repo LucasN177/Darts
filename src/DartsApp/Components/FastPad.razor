@@ -29,6 +29,10 @@
     }
 
     <div class="fast-quick">
+        @if (FastInput.CanBust(Engine))
+        {
+            <button type="button" class="pad-btn special miss" disabled="@Disabled" @onclick="BustAsync">Bust</button>
+        }
         @if (Engine.CheckoutTarget is { } target && FastInput.CheckoutDartOptions(target.Remaining, target.OutRule).Count > 0)
         {
             <button type="button" class="pad-btn special rest" disabled="@Disabled" @onclick="() => SetValue(target.Remaining)">Rest @target.Remaining</button>
@@ -66,6 +70,8 @@
     [Parameter, EditorRequired] public GameEngine Engine { get; set; } = default!;
     /// <summary>Summe und ggf. Checkout-Darts eintragen; liefert eine Fehlermeldung oder null.</summary>
     [Parameter, EditorRequired] public Func<int, int?, Task<string?>> OnSubmit { get; set; } = default!;
+    /// <summary>Aufnahme als Bust verbuchen, ohne Summe; liefert eine Fehlermeldung oder null.</summary>
+    [Parameter, EditorRequired] public Func<Task<string?>> OnBust { get; set; } = default!;
     [Parameter] public EventCallback OnUndo { get; set; }
     [Parameter] public bool CanUndo { get; set; }
     [Parameter] public bool Disabled { get; set; }
@@ -106,6 +112,14 @@
         if (Disabled) return;
         var total = Value ?? 0; // leere Eingabe = 0 Punkte
         _error = await OnSubmit(total, checkoutDarts);
+        if (_error is null) _value = "";
+        await FocusAsync();
+    }
+
+    private async Task BustAsync()
+    {
+        if (Disabled) return;
+        _error = await OnBust();
         if (_error is null) _value = "";
         await FocusAsync();
     }

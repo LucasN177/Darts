@@ -160,7 +160,7 @@ else
 
             @if (Session.IsFastInput)
             {
-                <FastPad Engine="engine" OnSubmit="ThrowTotalAsync" OnUndo="Session.UndoAsync" CanUndo="@(engine.CanUndo && engine.HasHumanThrower)"
+                <FastPad Engine="engine" OnSubmit="ThrowTotalAsync" OnBust="Session.BustAsync" OnUndo="Session.UndoAsync" CanUndo="@(engine.CanUndo && engine.HasHumanThrower)"
                          Disabled="@(engine.IsFinished || engine.IsBotTurn)" />
             }
             else
