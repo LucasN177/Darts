@@ -111,6 +111,13 @@ else
                     <PlayerCard View="engine.GetView(i)" IsWinner="@(engine.Winner == i)" IsBot="@engine.Players[i].IsBot" Thrower="@(engine.Players[i].IsTeam && !engine.IsFinished && i == engine.CurrentPlayer ? engine.CurrentThrower.Name : null)" />
                 }
             </div>
+            @* Zweispaltig: Hinweis (z.B. Checkout-Weg) links unter den Punkten, damit das Eingabefeld rechts nicht springt. *@
+            @if (!engine.IsFinished && engine.Hint is { } wideHint)
+            {
+                <MudPaper Class="pa-2 mt-3 d-none d-md-block" Elevation="1">
+                    <MudAlert Severity="Severity.Info" Dense="true" Variant="Variant.Text" Icon="@Icons.Material.Filled.TrackChanges">@wideHint</MudAlert>
+                </MudPaper>
+            }
         </MudItem>
 
         <MudItem xs="12" md="5">
@@ -139,7 +146,10 @@ else
                     </div>
                     @if (engine.Hint is { } hint)
                     {
-                        <MudAlert Severity="Severity.Info" Dense="true" Variant="Variant.Text" Icon="@Icons.Material.Filled.TrackChanges">@hint</MudAlert>
+                        @* Einspaltig (schmaler Bildschirm): Hinweis bleibt direkt über der Eingabe. *@
+                        <div class="d-md-none">
+                            <MudAlert Severity="Severity.Info" Dense="true" Variant="Variant.Text" Icon="@Icons.Material.Filled.TrackChanges">@hint</MudAlert>
+                        </div>
                     }
                     @if (engine.Message is { } message)
                     {
